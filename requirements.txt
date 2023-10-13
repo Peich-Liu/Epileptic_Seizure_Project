@@ -5,3 +5,7 @@ pandas
 pyedflib
 resampy
 timescoring
+scipy
+entropy
+scikit-learn
+ibmlearn

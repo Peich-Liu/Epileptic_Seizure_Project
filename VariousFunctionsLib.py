@@ -13,6 +13,7 @@ from matplotlib.gridspec import GridSpec
 from entropy import *
 import scipy
 import pyedflib
+import numpy as np
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier

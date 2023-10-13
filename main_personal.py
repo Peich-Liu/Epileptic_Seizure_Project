@@ -7,8 +7,8 @@ import os
 #####################################################
 # SIENA DATASET
 dataset='SIENA'
-rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
+# rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
+rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0/PN00' #when running from remote desktop
 DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 GeneralParams.PersCV_MinTrainHours = 1
 GeneralParams.PersCV_CVStepInHours = 0.5
@@ -46,17 +46,18 @@ FeaturesParams.featSetNames= FeaturesParams.featNames
 # CREATE FOLDER NAMES
 appendix='_NewNormalization' #if needed _10SUBJ
 # Output folder for standardized dataset
-outDir= '../../../10_datasets/'+ dataset+ '_Standardized'
+# outDir= '../../../10_datasets/'+ dataset+ '_Standardized'
+outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
 os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParams.eegDataNormalization==''):
-    outDirFeatures = '../../../10_datasets/' + dataset + '_Features/'
-    outPredictionsFolder = '../../../10_datasets/' + dataset + '_TrainingResults'+'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults'+'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 else:
-    outDirFeatures= '../../../10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
-    outPredictionsFolder = '../../../10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
