@@ -32,13 +32,14 @@ GeneralParams.PersCV_CVStepInHours = 0.5
 #####################################################
 # SET DIFFERENT PARAMETERS
 # Set features to use (it will be in the ouput folder name)
-FeaturesParams.featNames = np.array( ['ZeroCross'])
+# FeaturesParams.featNames = np.array( ['ZeroCross'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','ZeroCross'])
 # FeaturesParams.featNames = np.array( ['Frequency'])
 # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
+FeaturesParams.featNames = np.array( ['ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
 #####################################################
