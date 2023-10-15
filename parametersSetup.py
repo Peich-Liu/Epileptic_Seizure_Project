@@ -38,6 +38,14 @@ def constructAllfeatNames(FeaturesParams ):
             allFeatNames.extend(FeaturesParams.indivFeatNames_LL)
         elif (fName=='Frequency'):
             allFeatNames.extend(FeaturesParams.indivFeatNames_Freq)
+        elif (fName=='StandardDeviation'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_SD)
+        elif (fName=='DMe'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_DMe)
+        elif (fName=='SKewnesss'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_Skew)
+        elif (fName=='SecondOrder'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_SO)
         elif (fName=='ZeroCrossAbs'):
             for i in range(len(FeaturesParams.ZC_thresh_arr)):
                 allFeatNames.extend(['ZCThr'+ str(FeaturesParams.ZC_thresh_arr[i])])
@@ -56,13 +64,18 @@ class FeaturesParams:
 
     #features extracted from data
     featSetNames = np.array( ['MeanAmpl', 'LineLength', 'Frequency', 'ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD','SRP','RPcla'])
-    # featNames = np.array(['MeanAmpl', 'LineLength', 'Frequency'])
+    # featSetNames = np.array( ['MeanAmpl', 'LineLength', 'Frequency', 'ZeroCross'])
+    featNames = np.array(['MeanAmpl', 'LineLength', 'Frequency'])
     allFeatName = '-'.join(featSetNames)
 
     #individual features within each set of features
     indivFeatNames_MeanAmpl=['meanAmpl']
     indivFeatNames_LL=['lineLenth']
     indivFeatNames_Freq = ['p_dc_rel', 'p_mov_rel', 'p_delta_rel', 'p_theta_rel', 'p_alfa_rel', 'p_middle_rel', 'p_beta_rel', 'p_gamma_rel', 'p_dc', 'p_mov', 'p_delta', 'p_theta', 'p_alfa', 'p_middle', 'p_beta', 'p_gamma', 'p_tot']
+    indivFeatNames_SD = ['StandardDeviation']
+    indivFeatNames_DMe = ['DMe']
+    indivFeatNames_Skew = ['SKewnesss']
+    indivFeatNames_SO = ['SecondOrder']
     #ZC features params
     ZC_thresh_type='rel' #'abs' or 'rel'
     ZC_thresh_arr_rel=[ 0.25, 0.50, 0.75, 1, 1.5]

@@ -8,9 +8,9 @@ import os
 # SIENA DATASET
 dataset='SIENA'
 # rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0/PN00' #when running from remote desktop
+rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
 DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
-GeneralParams.PersCV_MinTrainHours = 1
+GeneralParams.PersCV_MinTrainHours = 1  
 GeneralParams.PersCV_CVStepInHours = 0.5
 
 # # SEIZIT DATASET
@@ -39,7 +39,8 @@ GeneralParams.PersCV_CVStepInHours = 0.5
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','ZeroCross'])
 # FeaturesParams.featNames = np.array( ['Frequency'])
 # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
-FeaturesParams.featNames = np.array( ['ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
+FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss'])
+# FeaturesParams.featNames = np.array( ['ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
 #####################################################
@@ -68,16 +69,16 @@ print(os.path.exists(rootDir))
 # print(os.listdir('../../../../../'))
 
 ####################################################
-# # STANDARTIZE DATASET - Only has to be done once
-# print('STANDARDIZING DATASET')
-# # .edf as output
-# if (dataset=='CHBMIT'):
-#     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-#     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-# else:
-#     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+# STANDARTIZE DATASET - Only has to be done once
+print('STANDARDIZING DATASET')
+# .edf as output
+if (dataset=='CHBMIT'):
+    # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+    standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+else:
+    standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-# #if we want to change output format
+# if we want to change output format
 # standardizeDataset(rootDir, outDir, outFormat='csv')
 # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
@@ -107,131 +108,131 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
-# #####################################################
-# EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+# # #####################################################
+# # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 
-# # # CALCULATE KL DIVERGENCE OF FEATURES
-GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-GeneralParams.patients.sort() #Sorting them
-FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
-
-# # # # ####################################################
-# # # # # TRAIN PERSONALIZED MODEL
-# # # print('TRAINING')
-# GeneralParams.patients = [f.name for f in os.scandir(outDir) if f.is_dir() ]
+# # # # CALCULATE KL DIVERGENCE OF FEATURES
+# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
 # GeneralParams.patients.sort() #Sorting them
-# # GeneralParams.patients=GeneralParams.patients[16:]
-# # GeneralParams.patients=GeneralParams.patients[:10]
-# # #
-# NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
-# annotationsInTrainAllSubj=pd.DataFrame()
-# # NonFeatureColumns= ['Subject', 'FileName',  'Labels'] # TODO: OLD FEAT
-# AllRes_test=np.zeros((len(GeneralParams.patients),27))
-# for patIndx, pat in enumerate(GeneralParams.patients):
-#     print(pat)
-#     # Load all files from this subject
-#     dataFinal=loadOneSubjData(dataset, pat, outDirFeatures, FeaturesParams.featNames, DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
+# FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+# calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
-#     # GO THROUGH CVs
-#     minHoursTrain= findMinNumHoursToTrain(dataFinal, GeneralParams.PersCV_MinTrainHours, GeneralParams.PersCV_CVStepInHours) #min hours so that at lease one seizure
-#     numCV=int(np.ceil((len(dataFinal)-minHoursTrain*GeneralParams.PersCV_CVStepInHours*60*60)/ (GeneralParams.PersCV_CVStepInHours*60*60)))
+# # # # # ####################################################
+# # # # # TRAIN PERSONALIZED MODEL
+print('TRAINING')
+GeneralParams.patients = [f.name for f in os.scandir(outDir) if f.is_dir() ]
+GeneralParams.patients.sort() #Sorting them
+# GeneralParams.patients=GeneralParams.patients[16:]
+# GeneralParams.patients=GeneralParams.patients[:10]
+# #
+NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
+annotationsInTrainAllSubj=pd.DataFrame()
+# NonFeatureColumns= ['Subject', 'FileName',  'Labels'] # TODO: OLD FEAT
+AllRes_test=np.zeros((len(GeneralParams.patients),27))
+for patIndx, pat in enumerate(GeneralParams.patients):
+    print(pat)
+    # Load all files from this subject
+    dataFinal=loadOneSubjData(dataset, pat, outDirFeatures, FeaturesParams.featNames, DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
 
-#     #create dataframe with data that is in the train set
-#     annotationsInTrain=extractTrainFiles( annotationsTrue, minHoursTrain*GeneralParams.PersCV_CVStepInHours, pat )
-#     annotationsInTrainAllSubj = pd.concat([annotationsInTrainAllSubj, annotationsInTrain], axis=0)
+    # GO THROUGH CVs
+    minHoursTrain= findMinNumHoursToTrain(dataFinal, GeneralParams.PersCV_MinTrainHours, GeneralParams.PersCV_CVStepInHours) #min hours so that at lease one seizure
+    numCV=int(np.ceil((len(dataFinal)-minHoursTrain*GeneralParams.PersCV_CVStepInHours*60*60)/ (GeneralParams.PersCV_CVStepInHours*60*60)))
 
-#     predLabels_test=np.zeros((0))
-#     probabLab_test=np.zeros((0))
-#     for cv in range(numCV):
-#         trainData=dataFinal.loc[0:(minHoursTrain+cv)*GeneralParams.PersCV_CVStepInHours*60*60-1,:]
-#         testData = dataFinal.loc[(minHoursTrain + cv) *GeneralParams.PersCV_CVStepInHours* 60 * 60: (minHoursTrain+cv+1)*GeneralParams.PersCV_CVStepInHours*60 *60-1, :]
+    #create dataframe with data that is in the train set
+    annotationsInTrain=extractTrainFiles( annotationsTrue, minHoursTrain*GeneralParams.PersCV_CVStepInHours, pat )
+    annotationsInTrainAllSubj = pd.concat([annotationsInTrainAllSubj, annotationsInTrain], axis=0)
 
-#         testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
-#         trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
+    predLabels_test=np.zeros((0))
+    probabLab_test=np.zeros((0))
+    for cv in range(numCV):
+        trainData=dataFinal.loc[0:(minHoursTrain+cv)*GeneralParams.PersCV_CVStepInHours*60*60-1,:]
+        testData = dataFinal.loc[(minHoursTrain + cv) *GeneralParams.PersCV_CVStepInHours* 60 * 60: (minHoursTrain+cv+1)*GeneralParams.PersCV_CVStepInHours*60 *60-1, :]
 
-#         #normalize data
-#         if (FeaturesParams.featNorm == 'Norm'):
-#             # testDataFeatures= normalizeData(testDataFeatures)
-#             # trainDataFeatures = normalizeData(trainDataFeatures)
-#             (trainDataFeatures, testDataFeatures) = normalizeTrainAndTestData(trainDataFeatures, testDataFeatures)
-#             trainDataFeatures=removeExtremeValues(trainDataFeatures)
-#             testDataFeatures=removeExtremeValues(testDataFeatures)
-#             # remove useless feature columns
-#             colsToDrop = []
-#             colsToDrop = removeFeaturesIfExtreme(trainDataFeatures, colsToDrop)
-#             colsToDrop = removeFeaturesIfExtreme(testDataFeatures, colsToDrop)
-#             colsToDrop = list(set(colsToDrop))
-#             trainDataFeatures = trainDataFeatures.drop(labels=colsToDrop, axis='columns')
-#             testDataFeatures = testDataFeatures.drop(labels=colsToDrop, axis='columns')
+        testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
+        trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
 
-#         ## STANDARD ML LEARNING
-#         if (StandardMLParams.trainingDataResampling!='NoResampling'):
-#             (Xtrain, ytrain)=datasetResample(trainDataFeatures.to_numpy(), trainData['Labels'].to_numpy(), StandardMLParams.trainingDataResampling, StandardMLParams.traininDataResamplingRatio, randState=42)
-#         else:
-#             Xtrain=trainDataFeatures.to_numpy()
-#             ytrain=trainData['Labels'].to_numpy()
-#         MLstdModel = train_StandardML_moreModelsPossible(Xtrain, ytrain, StandardMLParams)
-#         # MLstdModel = train_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(), StandardMLParams)
-#         # testing
-#         (predLabels_test0, probabLab_test0, acc_test, accPerClass_test) = test_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(),MLstdModel)
-#         predLabels_test = np.concatenate((predLabels_test, predLabels_test0))
-#         probabLab_test = np.concatenate((probabLab_test, probabLab_test0))
-#         # print(acc_test, accPerClass_test)
+        #normalize data
+        if (FeaturesParams.featNorm == 'Norm'):
+            # testDataFeatures= normalizeData(testDataFeatures)
+            # trainDataFeatures = normalizeData(trainDataFeatures)
+            (trainDataFeatures, testDataFeatures) = normalizeTrainAndTestData(trainDataFeatures, testDataFeatures)
+            trainDataFeatures=removeExtremeValues(trainDataFeatures)
+            testDataFeatures=removeExtremeValues(testDataFeatures)
+            # remove useless feature columns
+            colsToDrop = []
+            colsToDrop = removeFeaturesIfExtreme(trainDataFeatures, colsToDrop)
+            colsToDrop = removeFeaturesIfExtreme(testDataFeatures, colsToDrop)
+            colsToDrop = list(set(colsToDrop))
+            trainDataFeatures = trainDataFeatures.drop(labels=colsToDrop, axis='columns')
+            testDataFeatures = testDataFeatures.drop(labels=colsToDrop, axis='columns')
 
-#     if (numCV==0):
-#         testLabels=np.zeros((len(dataFinal)))
-#         predLabels_test = np.zeros((len(dataFinal)))
-#         probabLab_test = np.zeros((len(dataFinal)))
-#         predLabels_MovAvrg = np.zeros((len(dataFinal)))
-#         predLabels_Bayes = np.zeros((len(dataFinal)))
-#     else:
-#         # measure performance
-#         testLabels=dataFinal.loc[minHoursTrain *GeneralParams.PersCV_CVStepInHours * 60 * 60: , 'Labels'].to_numpy()
-#         AllRes_test[patIndx, 0:9] = performance_sampleAndEventBased(predLabels_test, testLabels, PerformanceParams)
-#         # test smoothing - moving average
-#         predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
-#         AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testLabels, PerformanceParams)
-#         # test smoothing - moving average
-#         predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
-#         AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testLabels, PerformanceParams)
-#         outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
-#         saveDataToFile(AllRes_test, outputName, 'csv')
-#     # except:
-#     #     print('a')
-#     #     predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
-#     #     AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testLabels, PerformanceParams)
+        ## STANDARD ML LEARNING
+        if (StandardMLParams.trainingDataResampling!='NoResampling'):
+            (Xtrain, ytrain)=datasetResample(trainDataFeatures.to_numpy(), trainData['Labels'].to_numpy(), StandardMLParams.trainingDataResampling, StandardMLParams.traininDataResamplingRatio, randState=42)
+        else:
+            Xtrain=trainDataFeatures.to_numpy()
+            ytrain=trainData['Labels'].to_numpy()
+        MLstdModel = train_StandardML_moreModelsPossible(Xtrain, ytrain, StandardMLParams)
+        # MLstdModel = train_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(), StandardMLParams)
+        # testing
+        (predLabels_test0, probabLab_test0, acc_test, accPerClass_test) = test_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(),MLstdModel)
+        predLabels_test = np.concatenate((predLabels_test, predLabels_test0))
+        probabLab_test = np.concatenate((probabLab_test, probabLab_test0))
+        # print(acc_test, accPerClass_test)
 
-#     #visualize predictions
-#     outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
-#     plotPredictionsMatchingInTime(testLabels, predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
+    if (numCV==0):
+        testLabels=np.zeros((len(dataFinal)))
+        predLabels_test = np.zeros((len(dataFinal)))
+        probabLab_test = np.zeros((len(dataFinal)))
+        predLabels_MovAvrg = np.zeros((len(dataFinal)))
+        predLabels_Bayes = np.zeros((len(dataFinal)))
+    else:
+        # measure performance
+        testLabels=dataFinal.loc[minHoursTrain *GeneralParams.PersCV_CVStepInHours * 60 * 60: , 'Labels'].to_numpy()
+        AllRes_test[patIndx, 0:9] = performance_sampleAndEventBased(predLabels_test, testLabels, PerformanceParams)
+        # test smoothing - moving average
+        predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
+        AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testLabels, PerformanceParams)
+        # test smoothing - moving average
+        predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
+        AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testLabels, PerformanceParams)
+        outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
+        saveDataToFile(AllRes_test, outputName, 'csv')
+    # except:
+    #     print('a')
+    #     predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
+    #     AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testLabels, PerformanceParams)
+
+    #visualize predictions
+    outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
+    plotPredictionsMatchingInTime(testLabels, predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
 
 
-#     # Saving predicitions in time
-#     dataToSave = np.vstack((testLabels, probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
-#     dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
-#     outputName = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
-#     saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
+    # Saving predicitions in time
+    dataToSave = np.vstack((testLabels, probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
+    dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
+    outputName = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
+    saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
 
-#     # CREATE ANNOTATION FILE
-#     predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
-#     if (numCV>0):
-#         testPredictionsDF=pd.concat([dataFinal.loc[minHoursTrain *GeneralParams.PersCV_CVStepInHours * 60 * 60: ,NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
-#     else: #not enough data for train and test
-#         testPredictionsDF = pd.concat([dataFinal.loc[:, NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels,  columns=['ProbabLabels','PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])], axis=1)
-#     annotationsTrue=readDataFromFile(TrueAnnotationsFile)
-#     annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
-#     if (patIndx==0):
-#         annotationAllSubjPred=annotationAllPred
-#     else:
-#         annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
-#     #save every time, just for backup
-#     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
-#     annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
-#     #save which data is used in train
-#     outputName = outPredictionsFolder + '/TrainDataAnnotations.csv'
-#     annotationsInTrainAllSubj.sort_values(by=['filepath']).to_csv(outputName, index=False)
+    # CREATE ANNOTATION FILE
+    predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
+    if (numCV>0):
+        testPredictionsDF=pd.concat([dataFinal.loc[minHoursTrain *GeneralParams.PersCV_CVStepInHours * 60 * 60: ,NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+    else: #not enough data for train and test
+        testPredictionsDF = pd.concat([dataFinal.loc[:, NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels,  columns=['ProbabLabels','PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])], axis=1)
+    annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+    annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
+    if (patIndx==0):
+        annotationAllSubjPred=annotationAllPred
+    else:
+        annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
+    #save every time, just for backup
+    PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+    annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
+    #save which data is used in train
+    outputName = outPredictionsFolder + '/TrainDataAnnotations.csv'
+    annotationsInTrainAllSubj.sort_values(by=['filepath']).to_csv(outputName, index=False)
 
 
 # # #############################################################

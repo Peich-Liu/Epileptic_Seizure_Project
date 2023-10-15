@@ -9,3 +9,5 @@ scipy
 entropy
 scikit-learn
 ibmlearn
+pyarrow
+fastparquet

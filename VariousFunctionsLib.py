@@ -111,15 +111,15 @@ def calculateMLfeatures_oneCh(X, DatasetPreprocessParams, FeaturesParams, type):
         elif (type == 'StandardDeviation'):
             featVal = np.std(sig)
             numFeat = 1
-            allFeatNames =FeaturesParams.StandardDeviation
+            allFeatNames =FeaturesParams.indivFeatNames_SD
         elif (type == 'DMe'):
             featVal = np.mean(np.abs(sig - np.median(sig)))
             numFeat = 1
-            allFeatNames =FeaturesParams.DMe
+            allFeatNames =FeaturesParams.indivFeatNames_DMe
         elif (type == 'SKewnesss'):
             featVal = np.mean(sig - np.median(sig))
             numFeat = 1
-            allFeatNames =FeaturesParams.SKewnesss
+            allFeatNames =FeaturesParams.indivFeatNames_Skew
         # elif (type == 'SecondOrder'):
         #     nn = np.column_stack((sig[1:-1] - sig[:-2], sig[2:] - sig[1:-1]))
         #     SX = np.mean(nn[:, 0]**2)
