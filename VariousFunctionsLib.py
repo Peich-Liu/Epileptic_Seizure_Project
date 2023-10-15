@@ -613,10 +613,20 @@ def removeFeaturesIfExtreme(data, colsToDrop):
     Returns: Updated version of columns to drop from dataFrame. They have to be dropped outside of this function.
     '''
     numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns
+    # print("colsToDrop=",colsToDrop)
+    # print("numeric_cols=",numeric_cols)
     for colName in numeric_cols:
+        # print("data=",data)
+        
+        # print("type(colName)=",type(colName))
+        # print("colName=",colName)
+        # print("data[colName].head()=",data[colName].head())
+        # print("datatype=",type(data[colName].mean()))
+        # print("data",colName,":",data[colName].mean())
         if (data[colName].mean()==np.nan or data[colName].sum()==0): #if all 0 or all nan remove column
             # data.drop(labels=colName)
             colsToDrop.append(colName)
+            # print("colsDrop=",colsToDrop)
     return colsToDrop
 
 def normalizeData(data):
