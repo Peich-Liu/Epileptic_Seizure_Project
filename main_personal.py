@@ -35,11 +35,11 @@ GeneralParams.PersCV_CVStepInHours = 0.5
 # FeaturesParams.featNames = np.array( ['ZeroCross'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
-# FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
+FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','ZeroCross'])
 # FeaturesParams.featNames = np.array( ['Frequency'])
 # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
-FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss'])
+# FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss'])
 # FeaturesParams.featNames = np.array( ['ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
@@ -69,7 +69,7 @@ print(os.path.exists(rootDir))
 # print(os.listdir('../../../../../'))
 
 ####################################################
-# # STANDARTIZE DATASET - Only has to be done once
+# # # STANDARTIZE DATASET - Only has to be done once
 # print('STANDARDIZING DATASET')
 # # .edf as output
 # if (dataset=='CHBMIT'):
@@ -111,13 +111,13 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 # # #####################################################
 # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
 # outDir = ''
-# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 
 # # # # CALCULATE KL DIVERGENCE OF FEATURES
-# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-# GeneralParams.patients.sort() #Sorting them
-# FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-# calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+GeneralParams.patients.sort() #Sorting them
+FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
 # # # # # ####################################################
 # # # # # TRAIN PERSONALIZED MODEL

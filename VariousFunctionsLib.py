@@ -28,6 +28,8 @@ import datetime
 from timescoring.annotations import Annotation
 from timescoring import scoring
 from timescoring import visualization
+from new_feature_calculate import *
+
 
 def bandpower(x, fs, fmin, fmax):
     ''' Function that calculates energy of specific frequency band of FFT spectrum
@@ -120,18 +122,10 @@ def calculateMLfeatures_oneCh(X, DatasetPreprocessParams, FeaturesParams, type):
             featVal = np.mean(sig - np.median(sig))
             numFeat = 1
             allFeatNames =FeaturesParams.indivFeatNames_Skew
-        # elif (type == 'SecondOrder'):
-        #     nn = np.column_stack((sig[1:-1] - sig[:-2], sig[2:] - sig[1:-1]))
-        #     SX = np.mean(nn[:, 0]**2)
-        #     SY = np.mean(nn[:, 1]**2)
-        #     SXY = np.mean(nn[:, 0] * nn[:, 1])
-        #     D = np.sqrt(np.abs(SX + SY - 4 * (SX * SY - SXY**2)))
-        #     a = 1.7321 * np.sqrt(SX + SY + D)
-        #     b = 1.7321 * np.sqrt(SX + SY - D)
-        #     Ar = np.pi * a * b
-        #     featVal = Ar
-        #     numFeat = len(featVal) #??
-        #     allFeatNames =FeaturesParams.SecondOrder
+        elif (type == 'SecondOrder'):
+            featVal = calculateSecondOrderDifference(sig)
+            numFeat = 1
+            allFeatNames =FeaturesParams.SecondOrder
         # elif type == 'KatzFD':
         #     featVal = Katz_FD(sig)
         #     allFeatNames =FeaturesParams.KatzFD
