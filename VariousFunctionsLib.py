@@ -125,21 +125,27 @@ def calculateMLfeatures_oneCh(X, DatasetPreprocessParams, FeaturesParams, type):
         elif (type == 'SecondOrder'):
             featVal = calculateSecondOrderDifference(sig)
             numFeat = 1
-            allFeatNames =FeaturesParams.SecondOrder
-        # elif type == 'KatzFD':
-        #     featVal = Katz_FD(sig)
-        #     allFeatNames =FeaturesParams.KatzFD
-        # elif type == 'SRP':
-        #     featVal = func_SRP(sig, m)  # Assuming 'm' is defined elsewhere or passed as a parameter
-        #     allFeatNames =FeaturesParams.SRP
-        # elif type == 'RPcla':
-        #     featVal = RPcla(sig, m, eps)  # Assuming 'm' and 'eps' are defined elsewhere or passed as parameters
-        #     allFeatNames =FeaturesParams.RPcla
-
+            allFeatNames =FeaturesParams.indivFeatNames_SO
+        elif type == 'KatzFD':
+            featVal = calculateKatzFD(sig)
+            numFeat = 1
+            allFeatNames =FeaturesParams.indivFeatNames_KatzFD
+        elif type == 'MeanDeg':
+            featVal = calculateMeanNetDegree(sig)
+            numFeat = 1
+            allFeatNames =FeaturesParams.indivFeatNames_MD
+        elif type == 'MeanBetw':
+            featVal = calculateMeanNetBetweeness(sig)
+            numFeat = 1
+            allFeatNames =FeaturesParams.indivFeatNames_MB
+        elif type == 'MeanClose':
+            featVal = calculateMeanNetCloseness(sig)
+            numFeat = 1
+            allFeatNames =FeaturesParams.indivFeatNames_MC
         if (i==0):
             featureValues=np.zeros((len(index), numFeat))
         featureValues[i,:]=featVal
-
+    # print("finish1")
     # allFeatNames= constructAllfeatNames(FeaturesParams)
     return (featureValues,allFeatNames)
 

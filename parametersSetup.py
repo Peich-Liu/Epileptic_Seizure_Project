@@ -46,6 +46,14 @@ def constructAllfeatNames(FeaturesParams ):
             allFeatNames.extend(FeaturesParams.indivFeatNames_Skew)
         elif (fName=='SecondOrder'):
             allFeatNames.extend(FeaturesParams.indivFeatNames_SO)
+        elif (fName=='KatzFD'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_KatzFD)
+        elif (fName=='MeanDeg'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_MD)
+        elif (fName=='MeanBetw'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_MB)
+        elif (fName=='MeanClose'):
+            allFeatNames.extend(FeaturesParams.indivFeatNames_MC)
         elif (fName=='ZeroCrossAbs'):
             for i in range(len(FeaturesParams.ZC_thresh_arr)):
                 allFeatNames.extend(['ZCThr'+ str(FeaturesParams.ZC_thresh_arr[i])])
@@ -76,6 +84,12 @@ class FeaturesParams:
     indivFeatNames_DMe = ['DMe']
     indivFeatNames_Skew = ['SKewnesss']
     indivFeatNames_SO = ['SecondOrder']
+    indivFeatNames_KatzFD = ['KatzFD']
+    indivFeatNames_MD = ['MeanDeg']
+    indivFeatNames_MB = ['MeanBetw']
+    indivFeatNames_MC = ['MeanClose']
+
+
     #ZC features params
     ZC_thresh_type='rel' #'abs' or 'rel'
     ZC_thresh_arr_rel=[ 0.25, 0.50, 0.75, 1, 1.5]
@@ -89,7 +103,7 @@ FeaturesParams.allFeatNames=constructAllfeatNames(FeaturesParams )
 
 class StandardMLParams:
 
-    modelType='RF' #'KNN', 'SVM', 'DT', 'RF','BaggingClassifier','AdaBoost'
+    modelType='KNN' #'KNN', 'SVM', 'DT', 'RF','BaggingClassifier','AdaBoost'
 
     # Data under/over sampling
     trainingDataResampling='NoResampling' #'NoResampling','ROS','SMOTE', 'RUS','TomekLinks', 'SMOTEtomek', 'SMOTEENN

@@ -11,3 +11,4 @@ scikit-learn
 ibmlearn
 pyarrow
 fastparquet
+networkx
