@@ -42,8 +42,8 @@ GeneralParams.PersCV_CVStepInHours = 0.5
 # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
 # FeaturesParams.featNames = np.array( ['MeanDeg'])
 # FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss'])
-# FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD'])
-FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
+FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD'])
+# FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
 #####################################################
@@ -112,15 +112,15 @@ TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
 # # # #####################################################
-# # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-# # # outDir = ''
-calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
-# print("JSbegin")
-# # # # # CALCULATE KL DIVERGENCE OF FEATURES
-GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-GeneralParams.patients.sort() #Sorting them
-FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+# # # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+# # # # # outDir = ''
+# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+# # print("JSbegin")
+# # # # # # CALCULATE KL DIVERGENCE OF FEATURES
+# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+# GeneralParams.patients.sort() #Sorting them
+# FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+# calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
 # # # # # ####################################################
 # # # # # TRAIN PERSONALIZED MODEL
@@ -246,44 +246,44 @@ for patIndx, pat in enumerate(GeneralParams.patients):
     annotationsInTrainAllSubj.sort_values(by=['filepath']).to_csv(outputName, index=False)
 
 
-# #############################################################
-# # #EVALUATE PERFORMANCE  - Compare two annotation files
-print('EVALUATING PERFORMANCE')
-labelFreq=1/FeaturesParams.winStep
-TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
-PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
-TrainDatAnnotationsFile = outPredictionsFolder + '/TrainDataAnnotations.csv'
-# Calcualte performance per file by comparing true annotations file and the one created by ML training
-paramsPerformance = scoring.EventScoring.Parameters(
-    toleranceStart=PerformanceParams.toleranceStart,
-    toleranceEnd=PerformanceParams.toleranceEnd,
-    minOverlap=PerformanceParams.minOveralp,
-    maxEventDuration=PerformanceParams.maxEventDuration,
-    minDurationBetweenEvents=PerformanceParams.minDurationBetweenEvents)
-# # performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
-performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile,TrainDatAnnotationsFile, labelFreq, paramsPerformance)
-# save performance per file
-PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
-performancePerFile.sort_values(by=['filepath']).to_csv(PerformancePerFileName, index=False)
+# # #############################################################
+# # # #EVALUATE PERFORMANCE  - Compare two annotation files
+# print('EVALUATING PERFORMANCE')
+# labelFreq=1/FeaturesParams.winStep
+# TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
+# PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+# TrainDatAnnotationsFile = outPredictionsFolder + '/TrainDataAnnotations.csv'
+# # Calcualte performance per file by comparing true annotations file and the one created by ML training
+# paramsPerformance = scoring.EventScoring.Parameters(
+#     toleranceStart=PerformanceParams.toleranceStart,
+#     toleranceEnd=PerformanceParams.toleranceEnd,
+#     minOverlap=PerformanceParams.minOveralp,
+#     maxEventDuration=PerformanceParams.maxEventDuration,
+#     minDurationBetweenEvents=PerformanceParams.minDurationBetweenEvents)
+# # # performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
+# performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile,TrainDatAnnotationsFile, labelFreq, paramsPerformance)
+# # save performance per file
+# PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+# performancePerFile.sort_values(by=['filepath']).to_csv(PerformancePerFileName, index=False)
 
-# # Calculate performance per subject
-GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-GeneralParams.patients.sort() #Sorting them
-PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
-performacePerSubj= recalculatePerfPerSubject(PerformancePerFileName, GeneralParams.patients, labelFreq, paramsPerformance)
-PerformancePerSubjName = outPredictionsFolder + '/' + dataset + 'PerformancePerSubj.csv'
-performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, index=False)
-# plot performance per subject
-plotPerformancePerSubj(GeneralParams.patients, performacePerSubj, outPredictionsFolder)
+# # # Calculate performance per subject
+# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+# GeneralParams.patients.sort() #Sorting them
+# PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+# performacePerSubj= recalculatePerfPerSubject(PerformancePerFileName, GeneralParams.patients, labelFreq, paramsPerformance)
+# PerformancePerSubjName = outPredictionsFolder + '/' + dataset + 'PerformancePerSubj.csv'
+# performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, index=False)
+# # plot performance per subject
+# plotPerformancePerSubj(GeneralParams.patients, performacePerSubj, outPredictionsFolder)
 
-### PLOT IN TIME
-for patIndx, pat in enumerate(GeneralParams.patients):
-    print(pat)
-    InName = outPredictionsFolder + '/Subj' + pat + '_' + StandardMLParams.modelType + '_TestPredictions.csv.parquet.gzip'
-    data= readDataFromFile(InName)
-    # visualize predictions
-    outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
-    plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+# ### PLOT IN TIME
+# for patIndx, pat in enumerate(GeneralParams.patients):
+#     print(pat)
+#     InName = outPredictionsFolder + '/Subj' + pat + '_' + StandardMLParams.modelType + '_TestPredictions.csv.parquet.gzip'
+#     data= readDataFromFile(InName)
+#     # visualize predictions
+#     outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
+#     plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
 
 # #
 # # ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER

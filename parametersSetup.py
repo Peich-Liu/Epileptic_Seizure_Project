@@ -103,7 +103,7 @@ FeaturesParams.allFeatNames=constructAllfeatNames(FeaturesParams )
 
 class StandardMLParams:
 
-    modelType='KNN' #'KNN', 'SVM', 'DT', 'RF','BaggingClassifier','AdaBoost'
+    modelType='RUSboost' #'KNN', 'SVM', 'DT', 'RF','BaggingClassifier','AdaBoost'
 
     # Data under/over sampling
     trainingDataResampling='NoResampling' #'NoResampling','ROS','SMOTE', 'RUS','TomekLinks', 'SMOTEtomek', 'SMOTEENN
@@ -125,6 +125,15 @@ class StandardMLParams:
     #Bagging, boosting classifier parameters
     Bagging_base_estimator='SVM' #'SVM','KNN', 'DecisionTree'
     Bagging_n_estimators = 100  # 10,50, 100,250
+    #RUSboost parameter
+    RUS_estimator=None
+    RUS_n_estimators=50
+    RUS_learning_rate=1.0
+    RUS_algorithm='SAMME.R'
+    RUS_sampling_strategy='auto'
+    RUS_replacement=False
+    RUS_random_state=None
+    RUS_base_estimator='deprecated'
 
 
 ##############################################################################################

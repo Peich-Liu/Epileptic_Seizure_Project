@@ -20,6 +20,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import AdaBoostClassifier
+from imblearn.ensemble import RUSBoostClassifier
 import scipy.io
 from scipy import signal
 import pandas as pd
@@ -706,7 +707,10 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
             model = AdaBoostClassifier(DecisionTreeClassifier(random_state=0, criterion=StandardMLParams.DecisionTree_criterion, splitter=StandardMLParams.DecisionTree_splitter),
                 n_estimators=StandardMLParams.Bagging_n_estimators, random_state=0)
         model = model.fit(X_train, y_train)
-
+    elif(StandardMLParams.modelType=='RUSboost'):
+            model = RUSBoostClassifier(estimator=StandardMLParams.RUS_estimator, n_estimators=StandardMLParams.RUS_n_estimators, learning_rate=StandardMLParams.RUS_learning_rate, 
+                                       algorithm=StandardMLParams.RUS_algorithm, sampling_strategy=StandardMLParams.RUS_sampling_strategy, replacement=StandardMLParams.RUS_replacement, random_state=StandardMLParams.RUS_random_state, base_estimator=StandardMLParams.RUS_base_estimator)
+    model = model.fit(X_train, y_train)
     return (model)
 
 

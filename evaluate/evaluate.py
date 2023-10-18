@@ -70,11 +70,21 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
         refDf = pd.concat([refDf, trainDf])
         refDf.sort_values(by=['subject', 'session'])
         refDf=refDf.drop_duplicates(keep=False, inplace= False)
-
+    # print("refDF=",refDf)
     for filepath, _ in refDf.groupby(['filepath']):
         # fs = 256
         try:
-            nSamples = round(refDf[refDf.filepath == filepath].duration.iloc[0] * labelFreq)
+            # filtered_df = refDf[refDf.filepath == filepath[0]]
+            # print("Filtered DataFrame:", filtered_df)
+            # print("filepath[0]=",filepath[0])
+            # print("refDf.filepath=",refDf.filepath)
+            # duration_value = filtered_df.duration.iloc[0]
+            # print("Duration value:", duration_value)
+            # res = round(duration_value * labelFreq)
+            # print("res=",res)
+            # nSamples = res
+            nSamples = round(refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
+            print("nSample=",nSamples)
         except:
             print ('a')
             print(filepath)
