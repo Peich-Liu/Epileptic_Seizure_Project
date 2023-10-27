@@ -6,10 +6,10 @@ import os
 
 #####################################################
 # # SIENA DATASET
-dataset='SIENA'
-rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
-DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+# dataset='SIENA'
+# rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
+# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
+# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
 # # SEIZIT DATASET
 # dataset='SeizIT1'
@@ -18,15 +18,16 @@ DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesT
 # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
 # # CHBMIT DATASET
-# dataset='CHBMIT'
-# rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
-# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
-# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
+dataset='CHBMIT'
+rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
+rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
+DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
 
 #####################################################
 # SET DIFFERENT PARAMETERS
 # Set features to use (it will be in the ouput folder name)
-FeaturesParams.featNames = np.array( ['ZeroCross'])
+# FeaturesParams.featNames = np.array( ['ZeroCross'])
+FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
@@ -37,17 +38,17 @@ FeaturesParams.featSetNames= FeaturesParams.featNames
 # CREATE FOLDER NAMES
 appendix='_NewNormalization' #if needed
 # Output folder for standardized dataset
-outDir= '../../../10_datasets/'+ dataset+ '_Standardized'
+outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
 os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParams.eegDataNormalization==''):
-    outDirFeatures = '../../../10_datasets/' + dataset + '_Features/'
-    outPredictionsFolder = '../../../10_datasets/' + dataset + '_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 else:
-    outDirFeatures= '../../../10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
-    outPredictionsFolder = '../../../10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
@@ -58,16 +59,16 @@ os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
 ## print(os.listdir('../../../../../'))
 
 #####################################################
-# # STANDARTIZE DATASET - Only has to be done once
-# print('STANDARDIZING DATASET')
-# # .edf as output
-# if (dataset=='CHBMIT'):
-#     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-#     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-# else:
-#     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+# STANDARTIZE DATASET - Only has to be done once
+print('STANDARDIZING DATASET')
+# .edf as output
+if (dataset=='CHBMIT'):
+    # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+    standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+else:
+    standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-#if we want to change output format
+# if we want to change output format
 # standardizeDataset(rootDir, outDir, outFormat='csv')
 # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
@@ -99,13 +100,13 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
 # #####################################################
 # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 #
 # # CALCULATE KL DIVERGENCE OF FEATURES
-# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-# GeneralParams.patients.sort() #Sorting them
-# FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-# calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+GeneralParams.patients.sort() #Sorting them
+FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
 # ####################################################
 # # TRAIN GENERALIZED MODEL
@@ -145,6 +146,8 @@ for kIndx in range(GeneralParams.GenCV_numFolds):
         trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
 
         #normalize data
+        trainDataFeatures = trainDataFeatures.loc[:,~trainDataFeatures.columns.duplicated()]
+        testDataFeatures = testDataFeatures.loc[:,~testDataFeatures.columns.duplicated()]
         if (FeaturesParams.featNorm == 'Norm'):
             # testDataFeatures= normalizeData(testDataFeatures)
             # trainDataFeatures = normalizeData(trainDataFeatures)

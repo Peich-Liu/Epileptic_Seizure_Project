@@ -1,6 +1,8 @@
 ''' file with all parameters'''
 import numpy as np
 import pickle
+# from sklearn.ensemble import RUSBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 class GeneralParams:
     patients=[]  #on which subjects to train and test
@@ -15,7 +17,7 @@ class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
     #Channels structure
     #Unipolar channels
     channelNamesToKeep_Unipolar = ('Fp1', 'F3', 'C3', 'P3', 'O1', 'F7', 'T3', 'T5', 'Fz', 'Cz', 'Pz', 'Fp2', 'F4', 'C4', 'P4', 'O2', 'F8', 'T4', 'T6')
-    refElectrode ='Avrg' #default 'Cz' or 'Avrg', or any of channels listed above
+    refElectrode ='Cz' #default 'Cz' or 'Avrg', or any of channels listed above
     #Bipolar channels
     channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
     # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T7', 'T7-P7', 'P7-O1', 'Fz-Cz', 'Cz-Pz',
@@ -126,9 +128,9 @@ class StandardMLParams:
     Bagging_base_estimator='SVM' #'SVM','KNN', 'DecisionTree'
     Bagging_n_estimators = 100  # 10,50, 100,250
     #RUSboost parameter
-    RUS_estimator=None
-    RUS_n_estimators=50
-    RUS_learning_rate=1.0
+    RUS_estimator=DecisionTreeClassifier(max_leaf_nodes=20)
+    RUS_n_estimators=30
+    RUS_learning_rate=0.1
     RUS_algorithm='SAMME.R'
     RUS_sampling_strategy='auto'
     RUS_replacement=False

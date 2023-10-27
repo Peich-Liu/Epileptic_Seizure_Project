@@ -74,15 +74,15 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
     for filepath, _ in refDf.groupby(['filepath']):
         # fs = 256
         try:
-            # filtered_df = refDf[refDf.filepath == filepath[0]]
-            # print("Filtered DataFrame:", filtered_df)
-            # print("filepath[0]=",filepath[0])
-            # print("refDf.filepath=",refDf.filepath)
-            # duration_value = filtered_df.duration.iloc[0]
-            # print("Duration value:", duration_value)
-            # res = round(duration_value * labelFreq)
-            # print("res=",res)
-            # nSamples = res
+            filtered_df = refDf[refDf.filepath == filepath[0]]
+            print("Filtered DataFrame:", filtered_df)
+            print("filepath[0]=",filepath[0])
+            print("refDf.filepath=",refDf.filepath)
+            duration_value = filtered_df.duration.iloc[0]
+            print("Duration value:", duration_value)
+            res = round(duration_value * labelFreq)
+            print("res=",res)
+            nSamples = res
             nSamples = round(refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
             print("nSample=",nSamples)
         except:
@@ -90,8 +90,8 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
             print(filepath)
 
         # Convert annotations
-        ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath]), labelFreq, nSamples)
-        hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath]), labelFreq, nSamples)
+        ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath[0]]), labelFreq, nSamples)
+        hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath[0]]), labelFreq, nSamples)
 
         # Compute performance
         scoresEvent = scoring.EventScoring(ref, hyp, params)
