@@ -98,7 +98,10 @@ def calculateMLfeatures_oneCh(X, DatasetPreprocessParams, FeaturesParams, type):
     index = np.arange(0, len(X) - segLenIndx, slidWindStepIndx).astype(int)
     for i in range(len(index)):
         sig = X[index[i]:index[i] + segLenIndx]
-
+        # print(len(index),",",i,",",len(sig))
+        # SRP = func_SRP(sig,3)
+        # AC = RPcla(sig,3,10)
+        # G = calculateGraph(AC,SRP)
         if (type == 'MeanAmpl'):
             featVal = np.mean(np.abs(np.copy(sig)))
             numFeat = 1
@@ -132,15 +135,15 @@ def calculateMLfeatures_oneCh(X, DatasetPreprocessParams, FeaturesParams, type):
             numFeat = 1
             allFeatNames =FeaturesParams.indivFeatNames_KatzFD
         elif type == 'MeanDeg':
-            featVal = calculateMeanNetDegree(sig)
+            featVal = calculateMeanNetDegree(G)
             numFeat = 1
             allFeatNames =FeaturesParams.indivFeatNames_MD
         elif type == 'MeanBetw':
-            featVal = calculateMeanNetBetweeness(sig)
+            featVal = calculateMeanNetBetweeness(G)
             numFeat = 1
             allFeatNames =FeaturesParams.indivFeatNames_MB
         elif type == 'MeanClose':
-            featVal = calculateMeanNetCloseness(sig)
+            featVal = calculateMeanNetCloseness(G)
             numFeat = 1
             allFeatNames =FeaturesParams.indivFeatNames_MC
         if (i==0):
@@ -715,7 +718,7 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
 
 
 #test program is here
-def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.85):
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.9):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 

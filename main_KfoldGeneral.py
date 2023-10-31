@@ -27,11 +27,12 @@ DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesT
 # SET DIFFERENT PARAMETERS
 # Set features to use (it will be in the ouput folder name)
 # FeaturesParams.featNames = np.array( ['ZeroCross'])
-# FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
+# FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
-FeaturesParams.featNames = np.array( ['MeanDeg'])
+# FeaturesParams.featNames = np.array( ['MeanDeg'])
+FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
 #####################################################
@@ -43,12 +44,12 @@ os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParams.eegDataNormalization==''):
     outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 else:
     outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)

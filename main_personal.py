@@ -38,11 +38,11 @@ GeneralParams.PersCV_CVStepInHours = 0.5
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','ZeroCross'])
-# FeaturesParams.featNames = np.array( ['Frequency'])
+# FeaturesParams.featNames = np.array( ['Frequency']) 
 # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
-FeaturesParams.featNames = np.array( ['MeanDeg'])
-# FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss'])
-# FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD'])
+# FeaturesParams.featNames = np.array( ['MeanDeg'])
+# FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss','SecondOrder'])
+FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
@@ -72,7 +72,7 @@ print(os.path.exists(rootDir))
 # print(os.listdir('../../../../../'))
 
 ####################################################
-# # # STANDARTIZE DATASET - Only has to be done once
+# # # # STANDARTIZE DATASET - Only has to be done once
 # print('STANDARDIZING DATASET')
 # # .edf as output
 # if (dataset=='CHBMIT'):
@@ -81,7 +81,7 @@ print(os.path.exists(rootDir))
 # else:
 #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-# # if we want to change output format
+# # # if we want to change output format
 # # standardizeDataset(rootDir, outDir, outFormat='csv')
 # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
@@ -111,7 +111,7 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
-# # # #####################################################
+# # # # #####################################################
 # # # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
 calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 # print("JSbegin")
