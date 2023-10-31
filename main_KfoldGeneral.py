@@ -6,10 +6,10 @@ import os
 
 #####################################################
 # # SIENA DATASET
-# dataset='SIENA'
-# rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
-# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+dataset='SIENA'
+rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
+rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
+DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
 # # SEIZIT DATASET
 # dataset='SeizIT1'
@@ -18,20 +18,20 @@ import os
 # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
 # # CHBMIT DATASET
-dataset='CHBMIT'
-rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
-rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
-DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
+# dataset='CHBMIT'
+# rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
+# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
+# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
 
 #####################################################
 # SET DIFFERENT PARAMETERS
 # Set features to use (it will be in the ouput folder name)
 # FeaturesParams.featNames = np.array( ['ZeroCross'])
-FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
+# FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
-# FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
+FeaturesParams.featNames = np.array( ['MeanDeg'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
 #####################################################
@@ -60,17 +60,17 @@ os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
 
 #####################################################
 # STANDARTIZE DATASET - Only has to be done once
-print('STANDARDIZING DATASET')
-# .edf as output
-if (dataset=='CHBMIT'):
-    # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-else:
-    standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+# print('STANDARDIZING DATASET')
+# # .edf as output
+# if (dataset=='CHBMIT'):
+#     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+#     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+# else:
+#     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-# if we want to change output format
-# standardizeDataset(rootDir, outDir, outFormat='csv')
-# standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+# # if we want to change output format
+# # standardizeDataset(rootDir, outDir, outFormat='csv')
+# # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
 # #####################################################
 # EXTRACT ANNOTATIONS - Only has to be done once
@@ -99,7 +99,7 @@ TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
 # #####################################################
-# # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+# EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
 calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 #
 # # CALCULATE KL DIVERGENCE OF FEATURES

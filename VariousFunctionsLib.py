@@ -714,8 +714,8 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
     return (model)
 
 
-
-def test_StandardML_moreModelsPossible(data,trueLabels,  model):
+#test program is here
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.85):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 
@@ -739,6 +739,8 @@ def test_StandardML_moreModelsPossible(data,trueLabels,  model):
     #PREDICT LABELS
     y_pred= model.predict(data)
     y_probability = model.predict_proba(data)
+    y_pred = (y_probability[:, 1] > custom_threshold).astype(int)
+    # custom_threshold = 0.7 #new thershold for the RUSboost
 
     #pick only probability of predicted class
     y_probability_fin=np.zeros(len(y_pred))
