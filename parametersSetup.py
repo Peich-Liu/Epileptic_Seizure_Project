@@ -3,6 +3,9 @@ import numpy as np
 import pickle
 # from sklearn.ensemble import RUSBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
+import torch
+from torch.utils.data import Dataset, DataLoader
+import os
 
 class GeneralParams:
     patients=[]  #on which subjects to train and test
@@ -16,12 +19,12 @@ class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
     samplFreq = 256  # sampling frequency of data
     #Channels structure
     #Unipolar channels
-    channelNamesToKeep_Unipolar = ('T3')
-    # channelNamesToKeep_Unipolar = ('Fp1', 'F3', 'C3', 'P3', 'O1', 'F7', 'T3', 'T5', 'Fz', 'Cz', 'Pz', 'Fp2', 'F4', 'C4', 'P4', 'O2', 'F8', 'T4', 'T6')
+    # channelNamesToKeep_Unipolar = ('T3')
+    channelNamesToKeep_Unipolar = ('Fp1', 'F3', 'C3', 'P3', 'O1', 'F7', 'T3', 'T5', 'Fz', 'Cz', 'Pz', 'Fp2', 'F4', 'C4', 'P4', 'O2', 'F8', 'T4', 'T6')
     refElectrode ='Cz' #default 'Cz' or 'Avrg', or any of channels listed above
     #Bipolar channels
-    channelNamesToKeep_Bipolar = ('T3-Cz')
-    # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
+    # channelNamesToKeep_Bipolar = ('T3-Cz')
+    channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
     # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T7', 'T7-P7', 'P7-O1', 'Fz-Cz', 'Cz-Pz',
     #                    'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T8', 'T8-P8', 'P8-O2') # TODO for old features
     # refElectrode='bipolar-dBanana' #if bipolar then ref electrode is not needed so put 'bipolar-dBanana'
@@ -69,7 +72,7 @@ def constructAllfeatNames(FeaturesParams ):
 class FeaturesParams:
     #window size and step in which window is moved
     winLen= 4 #in seconds, window length on which to calculate features
-    winStep= 4 #in seconds, step of moving window length
+    winStep= 1 #in seconds, step of moving window length
 
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
@@ -164,3 +167,20 @@ class PerformanceParams:
 #SAVING SETUP once again to update if new info
 with open('../PARAMETERS.pickle', 'wb') as f:
     pickle.dump([GeneralParams, DatasetPreprocessParams, FeaturesParams, StandardMLParams, PerformanceParams], f)
+
+
+##############################################################################################
+#### DEEP LEARNING PARAMETER
+class EEGWindowsDataset(Dataset):
+    def __init__(self, folder_path):
+        self.file_paths = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.npy')]
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def __getitem__(self, idx):
+        # 加载窗口数据
+        window_data = np.load(self.file_paths[idx])
+        # 转换为torch.Tensor
+        window_tensor = torch.from_numpy(window_data).float()
+        return window_tensor

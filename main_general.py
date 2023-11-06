@@ -100,7 +100,7 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
 # #####################################################
 # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 
 # # CALCULATE KL DIVERGENCE OF FEATURES
 # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]

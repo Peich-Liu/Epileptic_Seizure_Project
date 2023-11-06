@@ -1330,3 +1330,58 @@ def performance_sampleAndEventBased(predLab, trueLab, PerformanceParams):
 #     AvrgsAllSubj.to_csv(OutputName, index=False)
 #     OutputName = outPredictionsFolder + '/' + dataset + '_OptimizingPostprocessParameters_Bayes_SubjAvrg.csv'
 #     BayesAllSubj.to_csv(OutputName, index=False)
+
+def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesParams,dataNorm, outFormat ='parquet.gzip'):
+    """
+    Split continuous EEG data into overlapping windows.
+    """
+    edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
+    all_windows = []
+    # print("folder=",folderIn[-4:])
+    for edfFile in edfFiles:
+        eegDataDF, samplFreq , fileStartTime= readEdfFile(edfFile)  # Load data
+        # print(eegDataDF)
+        print(edfFile)
+
+        window_size_samples = int(FeaturesParams.winLen * samplFreq)
+        step_size_samples = int(FeaturesParams.winStep * samplFreq)
+        num_windows = (eegDataDF.shape[0] - window_size_samples) // step_size_samples + 1
+        windows = np.zeros((num_windows, len(DatasetPreprocessParams.channelNamesToKeep_Unipolar), window_size_samples))
+        # print(num_windows)
+        # print("eegDataDF.shape[0]=",eegDataDF.shape[0])
+        # print("window_size_samples=", window_size_samples)
+        for i in range(num_windows):
+            start = i * step_size_samples
+            end = start + window_size_samples
+            # print("start,end=",start,end)
+            windows[i] = eegDataDF.iloc[start:end].to_numpy().T
+            all_windows.append(windows[i])
+        all_windows_array = np.array(all_windows)
+        folder_name = os.path.basename(os.path.normpath(edfFile))
+        print("separate",folder_name)
+        np.save(os.path.join(folderOut,folder_name+'windows.npy'), all_windows_array)
+    # return windows
+
+# def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesParams,dataNorm, outFormat ='parquet.gzip'):
+#     """
+#     Split continuous EEG data into overlapping windows.
+#     """
+#     edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
+#     all_windows = []
+#     for edfFile in edfFiles:
+#         eegDataDF, samplFreq , fileStartTime= readEdfFile(edfFile)  # Load data
+#         print(edfFile)
+
+#         window_size_samples = int(FeaturesParams.winLen * samplFreq)
+#         step_size_samples = int(FeaturesParams.winStep * samplFreq)
+#         num_windows = (eegDataDF.shape[0] - window_size_samples) // step_size_samples + 1
+#         windows = np.zeros((num_windows, len(DatasetPreprocessParams.channelNamesToKeep_Unipolar), window_size_samples))
+#         for i in range(num_windows):
+#             start = i * step_size_samples
+#             end = start + window_size_samples
+#             # print("start,end=",start,end)
+#             windows[i] = eegDataDF.iloc[start:end].to_numpy().T
+#             all_windows.append(windows)
+#     print(len(all_windows))
+#         # break
+#     return windows
