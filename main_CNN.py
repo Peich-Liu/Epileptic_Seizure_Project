@@ -4,6 +4,7 @@ from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os
 from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Subset
 from torch import nn
 from architecture import *
 from trainer import *
@@ -113,13 +114,68 @@ DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channel
 # ##################################
 print('TRAINING') # run leave-one-subject-out CV
 folderIn = '/home/pliu/testForCNN/PN00'
-setLabelforCNN('/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv')
+labelFile = '/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv'
+# setLabelforCNN('/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv')
 
 
 
-# # folderIn = 'path_to_your_edf_files'  # Replace with the actual path to your EDF files
-# dataset = EEGDataset(folderIn)
+# folderIn = 'path_to_your_edf_files'  # Replace with the actual path to your EDF files
+dataset = EEGDataset(folderIn,labelFile)
 
-# # DataLoader
-# batch_size = 64
-# train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+# 定义训练集和验证集的切割点
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+
+# 顺序分割数据集
+train_indices = list(range(0, train_size))
+val_indices = list(range(train_size, len(dataset)))
+
+
+train_dataset = Subset(dataset, train_indices)
+val_dataset = Subset(dataset, val_indices)
+batch_size = 64
+
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+# print(train_loader)
+
+# all_data = []
+# all_labels = []
+# for data, labels in train_loader:
+#     all_data.append(data)
+#     all_labels.append(labels)
+
+# X_train = torch.cat(all_data)
+# y_train = torch.cat(all_labels)
+
+# n_chans = 19
+# n_classes = 2
+# model = Net(n_chans, n_classes)
+
+# val_data = []
+# val_labels = []
+# for data, labels in val_loader:
+#     val_data.append(data)
+#     val_labels.append(labels)
+
+# # 将所有数据和标签堆叠成一个大的批次
+# X_val = torch.cat(val_data)
+# y_val = torch.cat(val_labels)
+# # print(y_train)
+# n_chans = 19
+# n_classes = 2
+# model = Net(n_chans, n_classes)
+# Model = model
+# Train_set=(X_train,y_train)
+# Val_set=(X_val,y_val)
+# # 初始化 trainer
+# n_classes = 2  # 根据您的任务设置类别数
+# Trainer = trainer(model, Train_set, Val_set, 2)
+
+# # 编译 trainer
+# learning_rate = 0.001
+# Trainer.compile(learning_rate=learning_rate)
+
+# # 训练模型
+# epochs = 10
+# Trainer.train(epochs)
