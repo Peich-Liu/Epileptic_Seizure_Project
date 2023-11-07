@@ -134,18 +134,22 @@ def calculateMLfeatures_oneCh(X, DatasetPreprocessParams, FeaturesParams, type):
             featVal = calculateKatzFD(sig)
             numFeat = 1
             allFeatNames =FeaturesParams.indivFeatNames_KatzFD
-        elif type == 'MeanDeg':
-            featVal = calculateMeanNetDegree(G)
-            numFeat = 1
-            allFeatNames =FeaturesParams.indivFeatNames_MD
-        elif type == 'MeanBetw':
-            featVal = calculateMeanNetBetweeness(G)
-            numFeat = 1
-            allFeatNames =FeaturesParams.indivFeatNames_MB
-        elif type == 'MeanClose':
-            featVal = calculateMeanNetCloseness(G)
-            numFeat = 1
-            allFeatNames =FeaturesParams.indivFeatNames_MC
+        elif type == 'Network':
+            featVal = calculateNetwork(sig)
+            numFeat = len(featVal)
+            allFeatNames =FeaturesParams.indivFeatNames_NW
+        # elif type == 'MeanDeg':
+        #     featVal = calculateMeanNetDegree(G)
+        #     numFeat = 1
+        #     allFeatNames =FeaturesParams.indivFeatNames_MD
+        # elif type == 'MeanBetw':
+        #     featVal = calculateMeanNetBetweeness(G)
+        #     numFeat = 1
+        #     allFeatNames =FeaturesParams.indivFeatNames_MB
+        # elif type == 'MeanClose':
+        #     featVal = calculateMeanNetCloseness(G)
+        #     numFeat = 1
+        #     allFeatNames =FeaturesParams.indivFeatNames_MC
         if (i==0):
             featureValues=np.zeros((len(index), numFeat))
         featureValues[i,:]=featVal
@@ -718,7 +722,7 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
 
 
 #test program is here
-def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.9):
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.8):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 
@@ -1336,12 +1340,13 @@ def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesPa
     Split continuous EEG data into overlapping windows.
     """
     edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-    all_windows = []
+    
     # print("folder=",folderIn[-4:])
     for edfFile in edfFiles:
+        all_windows = []
         eegDataDF, samplFreq , fileStartTime= readEdfFile(edfFile)  # Load data
         # print(eegDataDF)
-        print(edfFile)
+        print(eegDataDF)
 
         window_size_samples = int(FeaturesParams.winLen * samplFreq)
         step_size_samples = int(FeaturesParams.winStep * samplFreq)
@@ -1358,8 +1363,8 @@ def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesPa
             all_windows.append(windows[i])
         all_windows_array = np.array(all_windows)
         folder_name = os.path.basename(os.path.normpath(edfFile))
-        print("separate",folder_name)
-        np.save(os.path.join(folderOut,folder_name+'windows.npy'), all_windows_array)
+        # print("separate",folder_name)
+        # np.save(os.path.join(folderOut,folder_name+'windows.npy'), all_windows_array)
     # return windows
 
 # def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesParams,dataNorm, outFormat ='parquet.gzip'):

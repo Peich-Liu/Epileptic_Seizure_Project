@@ -30,7 +30,7 @@ FeaturesParams.featNames = np.array( ['ZeroCross'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
 # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
-FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
+FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD','Network'])
 # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
 FeaturesParams.featSetNames= FeaturesParams.featNames
 
@@ -43,11 +43,11 @@ os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParams.eegDataNormalization==''):
     outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 else:
-    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ 'multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
     outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
@@ -100,13 +100,13 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
 # #####################################################
 # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 
 # # CALCULATE KL DIVERGENCE OF FEATURES
-# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-# GeneralParams.patients.sort() #Sorting them
-# FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-# calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+GeneralParams.patients.sort() #Sorting them
+FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
 # # ####################################################
 # # # TRAIN GENERALIZED MODEL

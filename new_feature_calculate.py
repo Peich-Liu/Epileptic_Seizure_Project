@@ -96,3 +96,15 @@ def calculateMeanNetCloseness(G):
 
     clos = np.mean(list(nx.closeness_centrality(G).values())) 
     return clos
+
+def calculateNetwork(sig):
+    AC = RPcla(sig,3,10)
+    SRP = func_SRP(sig,3)
+    G = nx.Graph(AC * SRP)
+
+    deg = calculateMeanNetDegree(G)
+    betw = calculateMeanNetBetweeness(G)
+    clos = calculateMeanNetCloseness(G)
+
+    AllFeature = [deg,betw,clos]
+    return AllFeature
