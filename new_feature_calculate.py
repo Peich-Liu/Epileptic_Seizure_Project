@@ -73,26 +73,17 @@ def calculateGraph(AC,SRP):
     return G
 
 def calculateMeanNetDegree(G):
-    # AC = RPcla(sig,3,10)
-    # SRP = func_SRP(sig,3)
-    # G = nx.Graph(AC * SRP)
 
     deg = np.mean(list(dict(G.degree()).values()))  
     # print("deg")
     return deg
 
 def calculateMeanNetBetweeness(G):
-    # AC = RPcla(sig,3,10)
-    # SRP = func_SRP(sig,3)
-    # G = nx.Graph(AC * SRP)
 
     betw = np.mean(list(nx.betweenness_centrality(G).values())) 
     return betw
 
 def calculateMeanNetCloseness(G):
-    # AC = RPcla(sig,3,10)
-    # SRP = func_SRP(sig,3)
-    # G = nx.Graph(AC * SRP)
 
     clos = np.mean(list(nx.closeness_centrality(G).values())) 
     return clos

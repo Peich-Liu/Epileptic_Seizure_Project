@@ -1,5 +1,5 @@
 from loadEeg.loadEdf import *
-from parametersSetup import *
+from parametersSetupCNN import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os
@@ -8,23 +8,23 @@ from torch import nn
 from architecture import *
 from trainer import *
 # # #####################################################
-# # SIENA DATASET
-# dataset='SIENA'
-# rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
-# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+# SIENA DATASET
+dataset='SIENA'
+rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
+rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
+DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar
 
-# # # # SEIZIT DATASET
-# # # dataset='SeizIT1'
-# # # rootDir=  '../../../../../databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from putty
-# # # rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
-# # # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+# # # SEIZIT DATASET
+# # dataset='SeizIT1'
+# # rootDir=  '../../../../../databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from putty
+# # rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
+# # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
-# # # # CHBMIT DATASET
-# # # dataset='CHBMIT'
-# # # rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
-# # # rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
-# # # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
+# # # CHBMIT DATASET
+# # dataset='CHBMIT'
+# # rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
+# # rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
+# # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
 # # #####################################################
 # # CREATE FOLDER NAMES
 # appendix='_NewNormalization' #if needed
@@ -91,9 +91,9 @@ from trainer import *
 
 # #####################################################
 # splitDataIntoWindows('/home/pliu/git_repo/10_datasets/SIENA_Standardized', '/home/pliu/git_repo/test/',DatasetPreprocessParams, FeaturesParams,DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip')
-folderIn = '/home/pliu/git_repo/10_datasets/SIENA_Standardized/PN00'
-dataset = EEGDataset(folderIn=folderIn)
-print(dataset)
+# folderIn = '/home/pliu/git_repo/10_datasets/SIENA_Standardized/PN14'
+# dataset = EEGDataset(folderIn=folderIn)
+# print(dataset)
 # dataset = EEGWindowsDataset(folder_path='/home/pliu/git_repo/test2')
 # data_loader = DataLoader(dataset, batch_size=64, shuffle=True)
 # # print(dataset)
@@ -112,38 +112,14 @@ print(dataset)
 # #
 # ##################################
 print('TRAINING') # run leave-one-subject-out CV
-# edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-# eegDataDF, samplFreq , fileStartTime= readEdfFile(edfFiles)  # Load data
+folderIn = '/home/pliu/testForCNN/PN00'
+setLabelforCNN('/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv')
 
-full_dataset = EEGDataset(folderIn='/home/pliu/testForCNN/PN00')
 
-train_size = int(0.8 * len(full_dataset))
-test_size = len(full_dataset) - train_size
-train_dataset, test_dataset = random_split(full_dataset, [train_size, test_size])
 
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-val_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+# # folderIn = 'path_to_your_edf_files'  # Replace with the actual path to your EDF files
+# dataset = EEGDataset(folderIn)
 
-print(train_loader)
-
-n_classes = 2  
-n_chans = 19  
-model = Net(n_chans, n_classes)
-
-# 准备训练集和验证集的特征和标签
-X_train, y_train = next(iter(train_loader))
-X_val, y_val = next(iter(val_loader))
-
-# 初始化trainer
-trainer_instance = trainer(model, (X_train, y_train), (X_val, y_val), n_classes)
-
-# 编译模型
-trainer_instance.compile(learning_rate=0.001)
-
-# 训练模型
-tracker = trainer_instance.train(epochs=50, batch_size=32, patience=10, directory='model.pt')
-
-# 保存训练和验证损失
-train_loss = tracker['train_tracker']
-val_loss = tracker['val_tracker']
-print(train_loss,",",val_loss)
+# # DataLoader
+# batch_size = 64
+# train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)

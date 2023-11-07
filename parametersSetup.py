@@ -74,8 +74,8 @@ def constructAllfeatNames(FeaturesParams ):
 
 class FeaturesParams:
     #window size and step in which window is moved
-    winLen= 4 #in seconds, window length on which to calculate features
-    winStep= 1 #in seconds, step of moving window length
+    winLen= 0.391 #in seconds, window length on which to calculate features
+    winStep= 0.391 #in seconds, step of moving window length
 
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
@@ -95,9 +95,9 @@ class FeaturesParams:
     indivFeatNames_Skew = ['SKewnesss']
     indivFeatNames_SO = ['SecondOrder']
     indivFeatNames_KatzFD = ['KatzFD']
-    indivFeatNames_MD = ['MeanDeg']
-    indivFeatNames_MB = ['MeanBetw']
-    indivFeatNames_MC = ['MeanClose']
+    # indivFeatNames_MD = ['MeanDeg']
+    # indivFeatNames_MB = ['MeanBetw']
+    # indivFeatNames_MC = ['MeanClose']
     indivFeatNames_NW = ['MeanDeg','MeanBetw','MeanClose']
 
 
@@ -171,64 +171,3 @@ class PerformanceParams:
 #SAVING SETUP once again to update if new info
 with open('../PARAMETERS.pickle', 'wb') as f:
     pickle.dump([GeneralParams, DatasetPreprocessParams, FeaturesParams, StandardMLParams, PerformanceParams], f)
-
-
-##############################################################################################
-#### DEEP LEARNING PARAMETER
-# class EEGWindowsDataset(Dataset):
-#     def __init__(self, folder_path):
-#         self.file_paths = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.npy')]
-
-#     def __len__(self):
-#         return len(self.file_paths)
-
-#     def __getitem__(self, idx):
-#         # 加载窗口数据
-#         window_data = np.load(self.file_paths[idx])
-#         # 转换为torch.Tensor
-#         window_tensor = torch.from_numpy(window_data).float()
-#         return window_tensor
-
-# class EEGDataset(Dataset):
-#     def __init__(self, folderIn):
-#         # 假设你的read_edf函数可以读取edf文件并返回numpy数组
-#         self.data = []
-#         edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-    
-#     # print("folder=",folderIn[-4:])
-#         for edfFile in edfFiles:
-#             try:
-#                 eegDataDF, samplFreq, fileStartTime = readEdfFile(edfFile)  # Load data
-#                 self.data.append(eegDataDF)
-#                 print(self.data)  # 打印数据，实际使用中可能不需要
-#             except Exception as e:
-#                 print(f"Error reading {edfFile}: {e}")
-
-#     def __len__(self):
-#         return len(self.data)
-
-#     def __getitem__(self, index):
-
-#         sample = self.data[index]
-    
-#         # 这里可以进行任何必要的处理，例如转换为torch张量，增加维度等
-#         sample = torch.from_numpy(sample).float().unsqueeze(0).unsqueeze(2)
-    
-#         # 返回处理后的单个样本
-#         return sample   
-class EEGDataset(Dataset):
-    def __init__(self, folderIn):
-        self.file_paths = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-
-    def __len__(self):
-        return len(self.file_paths)
-
-    def __getitem__(self, index):
-        file_path = self.file_paths[index]
-        eegDataDF, samplFreq, fileStartTime = readEdfFile(file_path)  # Load data
-        print("samplFreq=",samplFreq,"fileStartTime=",fileStartTime)
-
-        eegDataArray = eegDataDF.to_numpy()
-
-        sample = torch.from_numpy(eegDataArray).float()
-        return sample
