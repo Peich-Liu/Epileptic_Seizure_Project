@@ -1,5 +1,5 @@
 from loadEeg.loadEdf import *
-from parametersSetup import *
+from parametersSetupRUS import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os

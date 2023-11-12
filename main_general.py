@@ -1,5 +1,5 @@
 from loadEeg.loadEdf import *
-from parametersSetup import *
+from parametersSetupRUS import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os
@@ -119,126 +119,126 @@ GeneralParams.patients.sort() #Sorting them
 # GeneralParams.patients=GeneralParams.patients[0:3]
 
 dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-#
-# ##################################
-# print('TRAINING') # run leave-one-subject-out CV
-# NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
-# AllRes_test=np.zeros((len(GeneralParams.patients),27))
-# for patIndx, pat in enumerate(GeneralParams.patients):
-#     print(pat)
-#     testData= dataAllSubj[dataAllSubj['Subject'] == pat]
-#     trainData = dataAllSubj[dataAllSubj['Subject'] != pat]
-#     testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
-#     trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
-#     # testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
-#     # trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
-#     #normalize data
-#     trainDataFeatures = trainDataFeatures.loc[:,~trainDataFeatures.columns.duplicated()]
-#     testDataFeatures = testDataFeatures.loc[:,~testDataFeatures.columns.duplicated()]
-#     if (FeaturesParams.featNorm == 'Norm'):
-#         # testDataFeatures= normalizeData(testDataFeatures)
-#         # trainDataFeatures = normalizeData(trainDataFeatures)
-#         (trainDataFeatures, testDataFeatures) = normalizeTrainAndTestData(trainDataFeatures, testDataFeatures)
-#         trainDataFeatures=removeExtremeValues(trainDataFeatures)
-#         testDataFeatures=removeExtremeValues(testDataFeatures)
-#         #remove useless feature columns
-#         colsToDrop=[]
-#         colsToDrop=removeFeaturesIfExtreme(trainDataFeatures, colsToDrop)
-#         colsToDrop=removeFeaturesIfExtreme(testDataFeatures, colsToDrop)
-#         colsToDrop=list(set(colsToDrop))
-#         trainDataFeatures=trainDataFeatures.drop(labels=colsToDrop, axis='columns')
-#         testDataFeatures=testDataFeatures.drop(labels=colsToDrop, axis='columns')
 
-#     ## STANDARD ML LEARNING
-#     if (StandardMLParams.trainingDataResampling != 'NoResampling'):
-#         (Xtrain, ytrain) = datasetResample(trainDataFeatures.to_numpy(), trainData['Labels'].to_numpy(),
-#                                            StandardMLParams.trainingDataResampling,
-#                                            StandardMLParams.traininDataResamplingRatio, randState=42)
-#     else:
-#         Xtrain = trainDataFeatures.to_numpy()
-#         ytrain = trainData['Labels'].to_numpy()
-#     MLstdModel = train_StandardML_moreModelsPossible(Xtrain, ytrain, StandardMLParams)
-#     # MLstdModel = train_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(), StandardMLParams)
-#     # testing
-#     (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(),MLstdModel)
+##################################
+print('TRAINING') # run leave-one-subject-out CV
+NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
+AllRes_test=np.zeros((len(GeneralParams.patients),27))
+for patIndx, pat in enumerate(GeneralParams.patients):
+    print(pat)
+    testData= dataAllSubj[dataAllSubj['Subject'] == pat]
+    trainData = dataAllSubj[dataAllSubj['Subject'] != pat]
+    testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
+    trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
+    # testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
+    # trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
+    #normalize data
+    trainDataFeatures = trainDataFeatures.loc[:,~trainDataFeatures.columns.duplicated()]
+    testDataFeatures = testDataFeatures.loc[:,~testDataFeatures.columns.duplicated()]
+    if (FeaturesParams.featNorm == 'Norm'):
+        # testDataFeatures= normalizeData(testDataFeatures)
+        # trainDataFeatures = normalizeData(trainDataFeatures)
+        (trainDataFeatures, testDataFeatures) = normalizeTrainAndTestData(trainDataFeatures, testDataFeatures)
+        trainDataFeatures=removeExtremeValues(trainDataFeatures)
+        testDataFeatures=removeExtremeValues(testDataFeatures)
+        #remove useless feature columns
+        colsToDrop=[]
+        colsToDrop=removeFeaturesIfExtreme(trainDataFeatures, colsToDrop)
+        colsToDrop=removeFeaturesIfExtreme(testDataFeatures, colsToDrop)
+        colsToDrop=list(set(colsToDrop))
+        trainDataFeatures=trainDataFeatures.drop(labels=colsToDrop, axis='columns')
+        testDataFeatures=testDataFeatures.drop(labels=colsToDrop, axis='columns')
 
-#     # measure performance
-#     AllRes_test[patIndx, 0:9] = performance_sampleAndEventBased(predLabels_test, testData['Labels'].to_numpy(), PerformanceParams)
-#     # test smoothing - moving average
-#     predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
-#     AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testData['Labels'].to_numpy(), PerformanceParams)
-#     # test smoothing - moving average
-#     predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
-#     AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testData['Labels'].to_numpy(), PerformanceParams)
-#     outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
-#     saveDataToFile(AllRes_test, outputName, 'csv')
+    ## STANDARD ML LEARNING
+    if (StandardMLParams.trainingDataResampling != 'NoResampling'):
+        (Xtrain, ytrain) = datasetResample(trainDataFeatures.to_numpy(), trainData['Labels'].to_numpy(),
+                                           StandardMLParams.trainingDataResampling,
+                                           StandardMLParams.traininDataResamplingRatio, randState=42)
+    else:
+        Xtrain = trainDataFeatures.to_numpy()
+        ytrain = trainData['Labels'].to_numpy()
+    MLstdModel = train_StandardML_moreModelsPossible(Xtrain, ytrain, StandardMLParams)
+    # MLstdModel = train_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(), StandardMLParams)
+    # testing
+    (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(),MLstdModel)
 
-#     #visualize predictions
-#     outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
-#     plotPredictionsMatchingInTime(testData['Labels'].to_numpy(), predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
+    # measure performance
+    AllRes_test[patIndx, 0:9] = performance_sampleAndEventBased(predLabels_test, testData['Labels'].to_numpy(), PerformanceParams)
+    # test smoothing - moving average
+    predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
+    AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testData['Labels'].to_numpy(), PerformanceParams)
+    # test smoothing - moving average
+    predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
+    AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testData['Labels'].to_numpy(), PerformanceParams)
+    outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
+    saveDataToFile(AllRes_test, outputName, 'csv')
 
-
-#     # Saving predicitions in time
-#     dataToSave = np.vstack((testData['Labels'].to_numpy(), probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
-#     dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
-#     outputName = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
-#     saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
-
-#     # CREATE ANNOTATION FILE
-#     predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
-#     testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
-#     annotationsTrue=readDataFromFile(TrueAnnotationsFile)
-#     annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
-#     if (patIndx==0):
-#         annotationAllSubjPred=annotationAllPred
-#     else:
-#         annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
-#     #save every time, just for backup
-#     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
-#     annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
+    #visualize predictions
+    outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
+    plotPredictionsMatchingInTime(testData['Labels'].to_numpy(), predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
 
 
-# #############################################################
-# #EVALUATE PERFORMANCE  - Compare two annotation files
-# print('EVALUATING PERFORMANCE')
-# labelFreq=1/FeaturesParams.winStep
-# TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue_temp.csv'
-# PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
-# # Calcualte performance per file by comparing true annotations file and the one created by ML training
-# paramsPerformance = scoring.EventScoring.Parameters(
-#     toleranceStart=PerformanceParams.toleranceStart,
-#     toleranceEnd=PerformanceParams.toleranceEnd,
-#     minOverlap=PerformanceParams.minOveralp,
-#     maxEventDuration=PerformanceParams.maxEventDuration,
-#     minDurationBetweenEvents=PerformanceParams.minDurationBetweenEvents)
-# # performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
-# performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, [], labelFreq, paramsPerformance)
-# # save performance per file
-# PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
-# performancePerFile.sort_values(by=['filepath']).to_csv(PerformancePerFileName, index=False)
+    # Saving predicitions in time
+    dataToSave = np.vstack((testData['Labels'].to_numpy(), probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
+    dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
+    outputName = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
+    saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
 
-# # Calculate performance per subject
-# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-# GeneralParams.patients.sort() #Sorting them
-# PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
-# performacePerSubj= recalculatePerfPerSubject(PerformancePerFileName, GeneralParams.patients, labelFreq, paramsPerformance)
-# PerformancePerSubjName = outPredictionsFolder + '/' + dataset + 'PerformancePerSubj.csv'
-# performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, index=False)
-# # plot performance per subject
-# plotPerformancePerSubj(GeneralParams.patients, performacePerSubj, outPredictionsFolder)
+    # CREATE ANNOTATION FILE
+    predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
+    testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+    annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+    annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
+    if (patIndx==0):
+        annotationAllSubjPred=annotationAllPred
+    else:
+        annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
+    #save every time, just for backup
+    PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+    annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
 
 
-# ### PLOT IN TIME
-# for patIndx, pat in enumerate(GeneralParams.patients):
-#     print(pat)
-#     InName = outPredictionsFolder + '/Subj' + pat + '_' + StandardMLParams.modelType + '_TestPredictions.csv.parquet.gzip'
-#     data= readDataFromFile(InName)
+#############################################################
+#EVALUATE PERFORMANCE  - Compare two annotation files
+print('EVALUATING PERFORMANCE')
+labelFreq=1/FeaturesParams.winStep
+TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue_temp.csv'
+PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+# Calcualte performance per file by comparing true annotations file and the one created by ML training
+paramsPerformance = scoring.EventScoring.Parameters(
+    toleranceStart=PerformanceParams.toleranceStart,
+    toleranceEnd=PerformanceParams.toleranceEnd,
+    minOverlap=PerformanceParams.minOveralp,
+    maxEventDuration=PerformanceParams.maxEventDuration,
+    minDurationBetweenEvents=PerformanceParams.minDurationBetweenEvents)
+# performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
+performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, [], labelFreq, paramsPerformance)
+# save performance per file
+PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+performancePerFile.sort_values(by=['filepath']).to_csv(PerformancePerFileName, index=False)
 
-#     # visualize predictions
-#     outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
-#     plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+# Calculate performance per subject
+GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+GeneralParams.patients.sort() #Sorting them
+PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+performacePerSubj= recalculatePerfPerSubject(PerformancePerFileName, GeneralParams.patients, labelFreq, paramsPerformance)
+PerformancePerSubjName = outPredictionsFolder + '/' + dataset + 'PerformancePerSubj.csv'
+performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, index=False)
+# plot performance per subject
+plotPerformancePerSubj(GeneralParams.patients, performacePerSubj, outPredictionsFolder)
 
 
-# # ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER
-# # # load all predictions in time
-# # TestDifferentPostprocessingParams(outPredictionsFolder, dataset, GeneralParams, StandardMLParams)
+### PLOT IN TIME
+for patIndx, pat in enumerate(GeneralParams.patients):
+    print(pat)
+    InName = outPredictionsFolder + '/Subj' + pat + '_' + StandardMLParams.modelType + '_TestPredictions.csv.parquet.gzip'
+    data= readDataFromFile(InName)
+
+    # visualize predictions
+    outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
+    plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+
+
+# ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER
+# # load all predictions in time
+# TestDifferentPostprocessingParams(outPredictionsFolder, dataset, GeneralParams, StandardMLParams)
