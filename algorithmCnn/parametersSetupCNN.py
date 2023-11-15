@@ -91,28 +91,36 @@ with open('../PARAMETERS.pickle', 'wb') as f:
 #         sample = torch.from_numpy(eegDataArray).float()
 
 class EEGDataset(Dataset):
-    def __init__(self, folderIn, labelFile, window_size=1024):
+    def __init__(self, standDir, folderIn, seizure_info_df, window_size=1024):
         self.folderIn = folderIn
         self.window_size = window_size
-        self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
+        self.edfFiles = []
+        print(folderIn)
+        for folder in folderIn:
+            # print(folder)
+            edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
+            self.edfFiles.extend(edfFilesInFolder)
+
+        # self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
         self.current_file_index = 0
         self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
         self.current_file_length = self.current_data.shape[0]
         self.index_within_file = 0
-        self.seizure_info_df = pd.read_csv(labelFile)
+        # self.seizure_info_df = pd.read_csv(labelFile)
+        self.seizure_info_df = seizure_info_df
         # self.file_to_seizure = {
         #     row['filepath']: (row['startTime'], row['endTime'])
         #     for _, row in self.seizure_info_df.iterrows()
         # }
         self.file_to_seizure = {}
+        # self.file_to_seizure = {}
         for _, row in self.seizure_info_df.iterrows():
-            
             relative_path = row['filepath']
-            absolute_path = os.path.abspath(os.path.join(folderIn, relative_path))
-            self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'])
-
-        # self.data_dir = data_dir
+            absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
+            if os.path.exists(absolute_path):
+                self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
         self.filepaths = list(self.file_to_seizure.keys())
+        # print("self.filepaths=",self.filepaths)
         # self.seizure_times = self.readSeizureTimes(labelFile)
 
     def __len__(self):
@@ -140,9 +148,9 @@ class EEGDataset(Dataset):
         filepath = self.edfFiles[self.current_file_index]
 
         if filepath in self.file_to_seizure:
-            seizure_start, seizure_end = self.file_to_seizure[filepath]
+            seizureStart, seizureEnd, seizureType = self.file_to_seizure[filepath]
         else:
-            seizure_start, seizure_end = None, None
+            seizureStart, seizureEnd, seizureType = None, None, None
         
         start = self.index_within_file
         end = start + self.window_size
@@ -157,11 +165,11 @@ class EEGDataset(Dataset):
 
         window = self.current_data[start:end].to_numpy()
         self.index_within_file += self.window_size
-
+        # print("seizureStart=",seizureStart,"seizureEnd",seizureEnd,"seizureType",seizureType)
         # 生成标签
         # label = self.generate_label(window_start, window_end, seizure_start, seizure_end)
-        label = self.generate_label(start, end, seizure_start, seizure_end)
-
+        label = self.generate_label(start, end, seizureStart, seizureEnd, seizureType)
+        # print("label=", label)
         window_tensor = torch.tensor(window, dtype=torch.float)
         window_tensor = window_tensor.transpose(0, 1) 
 
@@ -173,11 +181,18 @@ class EEGDataset(Dataset):
         eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
         return eegDataDF, samplFreq, fileStartTime
     
-    def generate_label(self, window_start, window_end, seizure_start, seizure_end):
+    def generate_label(self, window_start, window_end, seizure_start, seizure_end, szType):
         # print("window_start=",window_start,"window_end",window_end,"seizure_start",seizure_start,"seizure_end",seizure_end)
-        if seizure_start is None or seizure_end is None:
-            return 0
-        label = 1 if (seizure_start < window_end and seizure_end > window_start) else 0
+        # if 'sz' not in szType:
+        #     return 0
+        # if seizure_start is None or seizure_end is None:
+        #     return 0
+        # label = 1 if (seizure_start < window_end and seizure_end > window_start and 'sz' in szType) else 0
+        if (seizure_start < window_end and seizure_end > window_start and 'sz' in szType):
+            label = 1
+            # print("szType=",szType,"seizure_start=",seizure_start)
+        else:
+            label = 0
         return label
  
 

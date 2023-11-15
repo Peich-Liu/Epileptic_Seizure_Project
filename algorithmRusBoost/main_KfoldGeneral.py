@@ -1,3 +1,5 @@
+import sys
+sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
 from parametersSetupRUS import *
 from VariousFunctionsLib import  *
@@ -17,7 +19,7 @@ DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesT
 # # rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
 # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
-# # CHBMIT DATASET
+# CHBMIT DATASET
 # dataset='CHBMIT'
 # rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
 # rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
@@ -43,12 +45,12 @@ outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
 os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParams.eegDataNormalization==''):
-    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
+    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
     outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 else:
-    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_multi_Features'+DatasetPreprocessParams.eegDataNormalization+'/'
     outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
@@ -57,7 +59,7 @@ os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
 
 # testing that folders are correct
 # print(os.path.exists(rootDir))
-## print(os.listdir('../../../../../'))
+# print(os.listdir('../../../../../'))
 
 #####################################################
 # STANDARTIZE DATASET - Only has to be done once
@@ -73,8 +75,8 @@ os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
 # # standardizeDataset(rootDir, outDir, outFormat='csv')
 # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
-# #####################################################
-# EXTRACT ANNOTATIONS - Only has to be done once
+# # #####################################################
+# # EXTRACT ANNOTATIONS - Only has to be done once
 if (dataset=='CHBMIT'):
     from loadAnnotations.CHBMITAnnotationConverter import *
 elif (dataset == 'SIENA'):
@@ -98,18 +100,18 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 #load annotations - if we are not extracting them above
 TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 annotationsTrue=pd.read_csv(TrueAnnotationsFile)
+print("TrueAnnotationsFile=",TrueAnnotationsFile)
+# # #####################################################
+# # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+# calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+# #
+# # # # CALCULATE KL DIVERGENCE OF FEATURES
+# # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+# # GeneralParams.patients.sort() #Sorting them
+# # FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+# # calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
-# #####################################################
-# EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
-#
-# # CALCULATE KL DIVERGENCE OF FEATURES
-GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-GeneralParams.patients.sort() #Sorting them
-FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
-
-# ####################################################
+# # ####################################################
 # # TRAIN GENERALIZED MODEL
 #
 ## LOAD ALL DATA OF ALL SUBJECTS
@@ -120,7 +122,7 @@ GeneralParams.patients.sort() #Sorting them
 # GeneralParams.patients=GeneralParams.patients[0:3]
 
 dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-
+# print(dataAllSubj)
 ##################################
 print('TRAINING') # run leave-one-subject-out CV
 NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']

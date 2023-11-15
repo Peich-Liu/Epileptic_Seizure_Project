@@ -403,6 +403,10 @@ def calculateFeaturesForAllFiles(folderIn, folderOut, DatasetPreprocessParams, F
         os.makedirs(os.path.dirname(outFile), exist_ok=True) # Create directory for file
 
         for fIndx, fName in enumerate(FeaturesParams.featNames):
+            finalFileName = outFile[:-4] + '-' + fName + '.' + outFormat
+            if os.path.exists(finalFileName):
+                print(f"Skipping {finalFileName}, already exists.")
+                continue
             if (fName=='ZeroCrossAbs'):
                 FeaturesParams.ZC_thresh_type='abs'
             else: #defauls is rel
@@ -592,7 +596,7 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
             labelsOut=np.concatenate((labelsOut, labels), axis=0)
             subjOut = np.concatenate((subjOut, [dir] * data_df.shape[0]), axis=0)
             fileOut = np.concatenate((fileOut, [filePathToSearch] * data_df.shape[0]), axis=0)
-
+    # print(dataOut)
     #add Labels column to dataframe
     dataOut.insert(1,'Labels',labelsOut.astype(int))
     # add subject
@@ -723,7 +727,7 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
 
 
 #test program is here
-def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.85):
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.8):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 
@@ -1467,4 +1471,11 @@ def setLabelforCNN(labelsFile):
     # dataOut.insert(0, 'Subject', subjOut)
     # dataOut.insert(1, 'FileName', fileOut)
     # # print(dataOut[['Labels']])
-
+# def generateLabelData(window_start, window_end, seizure_start, seizure_end):
+#     label = generateLabel(window_start, window_end, seizure_start, seizure_end)
+# def generateLabel(self, window_start, window_end, seizure_start, seizure_end):
+#         # print("window_start=",window_start,"window_end",window_end,"seizure_start",seizure_start,"seizure_end",seizure_end)
+#         if seizure_start is None or seizure_end is None:
+#             return 0
+#         label = 1 if (seizure_start < window_end and seizure_end > window_start) else 0
+#         return label

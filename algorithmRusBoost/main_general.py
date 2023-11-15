@@ -1,3 +1,5 @@
+import sys
+sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
 from parametersSetupRUS import *
 from VariousFunctionsLib import  *

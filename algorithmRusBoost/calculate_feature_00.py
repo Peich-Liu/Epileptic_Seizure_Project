@@ -1,3 +1,5 @@
+import sys
+sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
 from parametersSetupRUS import *
 from VariousFunctionsLib import  *
@@ -43,12 +45,12 @@ outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
 os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParams.eegDataNormalization==''):
-    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features_with_network/'
+    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
     outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
 else:
-    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_multi_Features'+DatasetPreprocessParams.eegDataNormalization+'/'
     outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
         FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
         FeaturesParams.featNames) + appendix+ '/'
@@ -101,26 +103,10 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
 # #####################################################
 # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-calculateFeaturesForAllFiles('/home/pliu/temp2/14', '/home/pliu/temp2/14', DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+calculateFeaturesForAllFiles('/home/pliu/git_repo/10_datasets/CHBMIT_Standardized/chb01', outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 # #
 # # # CALCULATE KL DIVERGENCE OF FEATURES
 # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
 # GeneralParams.patients.sort() #Sorting them
 # FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
 # calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
-
-# ####################################################
-# # # TRAIN GENERALIZED MODEL
-# #
-# ## LOAD ALL DATA OF ALL SUBJECTS
-# print('LOADING ALL DATA')
-# # Create list of all subjects
-# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-# GeneralParams.patients.sort() #Sorting them
-# # GeneralParams.patients=GeneralParams.patients[0:3]
-
-# dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-
-##################################
-print('TRAINING') # run leave-one-subject-out CV
-
