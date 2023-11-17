@@ -130,88 +130,87 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         testLabels = annotationsTrue[annotationsTrue['subject'] == test_patient]
         # DATA SPILT
         print("testFolder=",testFolder)
+        print("trainFolders=",trainFolders)
         label_df = annotationsTrue
-        trainSet = EEGDataset(outDir,trainFolders,trainLabels)
-        testSet = EEGDataset(outDir,testFolder, testLabels)
+        # trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
+        testSet = EEGDataset(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
         
-        train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False)
+#         train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=True)
+#         test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False)
         
-        # print("trainSet",trainSet)
+#         print("trainSet",trainSet)
         
-        # print("testSet",testSet)
-        all_data = []
-        all_labels = []
-        for data, labels in train_loader:
-            all_data.append(data)
-            all_labels.append(labels)
-        X_train = torch.cat(all_data)
-        y_train = torch.cat(all_labels)
-        # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
+        print("testSet",testSet)
+#         all_data = []
+#         all_labels = []
+#         for data, labels in train_loader:
+#             all_data.append(data)
+#             all_labels.append(labels)
+#         X_train = torch.cat(all_data)
+#         y_train = torch.cat(all_labels)
+#         print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
         
-        test_data = []
-        test_labels = []
-        for data, labels in test_loader:
-            test_data.append(data)
-            test_labels.append(labels)
-        X_val = torch.cat(test_data)
-        y_val = torch.cat(test_labels)
-        # print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
-        # TRAINING
-        model = Net(n_channel,n_classes)
-        Train_set_chb=(X_train,y_train)
-        val_dataset_chb=(X_val,y_val)
-        print("Train_set_chb=",Train_set_chb[0].shape)
+#         test_data = []
+#         test_labels = []
+#         for data, labels in test_loader:
+#             test_data.append(data)
+#             test_labels.append(labels)
+#         X_val = torch.cat(test_data)
+#         y_val = torch.cat(test_labels)
+#         print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
+#         # TRAINING
+#         model = Net(n_channel,n_classes)
+#         Train_set_chb=(X_train,y_train)
+#         val_dataset_chb=(X_val,y_val)
+#         print("Train_set_chb=",Train_set_chb[0].shape)
 
-        # Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
-        # learning_rate = 0.001
-        # Trainer_chb.compile(learning_rate=learning_rate)
-        # epochs = 10
-        # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp.pt')
-        # print(Tracker)        
-        # #EVALUATE NAIVE
-        model = Net(n_channel,n_classes)
-        model.load_state_dict(torch.load('temp.pt'))
-        model.eval()
-        all_predictions = []
-        all_labels = []
-        with torch.no_grad(): 
-            for data, labels in test_loader:
-                if torch.cuda.is_available():
-                    data = data.cuda()
-                    model = model.cuda()
+#         Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
+#         learning_rate = 0.001
+#         Trainer_chb.compile(learning_rate=learning_rate)
+#         epochs = 50
+#         Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp.pt')
+#         print(Tracker)        
+#         # #EVALUATE NAIVE
+#         model = Net(n_channel,n_classes)
+#         model.load_state_dict(torch.load('temp.pt'))
+#         model.eval()
+#         all_predictions = []
+#         all_labels = []
+#         with torch.no_grad(): 
+#             for data, labels in test_loader:
+#                 if torch.cuda.is_available():
+#                     data = data.cuda()
+#                     model = model.cuda()
                     
-                predictions = model(data)
+#                 predictions = model(data)
                 
-                _, predicted_classes = predictions.max(1)
+#                 _, predicted_classes = predictions.max(1)
                 
-                all_predictions.extend(predicted_classes.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
-        threshold = 0.9
-        with torch.no_grad():
-            for data, labels in test_loader:
-                if torch.cuda.is_available():
-                    data = data.cuda()
-                    model = model.cuda()
+#                 all_predictions.extend(predicted_classes.cpu().numpy())
+#                 all_labels.extend(labels.cpu().numpy())
+#         threshold = 0.5
+#         with torch.no_grad():
+#             for data, labels in test_loader:
+#                 if torch.cuda.is_available():
+#                     data = data.cuda()
+#                     model = model.cuda()
                     
-                outputs = model(data)
-                probabilities = torch.softmax(outputs, dim=1)[:, 1]  
-                predicted_classes = (probabilities > threshold).long()
+#                 outputs = model(data)
+#                 probabilities = torch.softmax(outputs, dim=1)[:, 1]  
+#                 predicted_classes = (probabilities > threshold).long()
 
-                all_predictions.extend(predicted_classes.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
+#                 all_predictions.extend(predicted_classes.cpu().numpy())
+#                 all_labels.extend(labels.cpu().numpy())
 
-        accuracy = accuracy_score(all_labels, all_predictions)
-        print(f'Accuracy: {accuracy}')
-        precision = precision_score(all_labels, all_predictions)
-        sensitivity = recall_score(all_labels, all_predictions)
-        F1 = (2*precision*sensitivity) / (precision+sensitivity)
+#         accuracy = accuracy_score(all_labels, all_predictions)
+#         print(f'Accuracy: {accuracy}')
+#         precision = precision_score(all_labels, all_predictions)
+#         sensitivity = recall_score(all_labels, all_predictions)
+#         F1 = (2*precision*sensitivity) / (precision+sensitivity)
 
-        print(f'Precision: {precision}')
-        print(f'Sensitivity: {sensitivity}')
-        print(f'F1:{F1}')
-
-
+#         print(f'Precision: {precision}')
+#         print(f'Sensitivity: {sensitivity}')
+#         print(f'F1:{F1}')
 
 
 
@@ -225,169 +224,171 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
 
 
 
-# # ##################################
-# # folderIn = '/home/pliu/git_repo/10_datasets/SIENA_Standardized'
-# # labelFile = '/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv'
-# # folerInchb = '/home/pliu/git_repo/CNN/CHBMIT_Standardized'
-# # labelFilechb = '/home/pliu/git_repo/CNN/CHBMIT_Standardized/CHBMITAnnotationsTrue.csv'
-    # folderInchb = '/home/pliu/testForCNN/CHBCNNtemp'
-    # labelFilechb = '/home/pliu/testForCNN/CHBCNNtemp/CHBMITAnnotationsTrue.csv'
-# # folderInchb = '/home/pliu/git_repo/10_datasets/CHBMIT_Standardized'
-# # labelFilechb = '/home/pliu/git_repo/10_datasets/CHBMIT_Standardized/CHBMITAnnotationsTrue.csv'
-# # setLabelforCNN('/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv')
-# ###############################
-# split the data#################
-# ###############################
-# ##SIN
-# dataset = EEGDataset(folderIn,labelFile)
-# train_size = int(0.8 * len(dataset))
-# val_size = len(dataset) - train_size
-# train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+
+# # # ##################################
+# # # folderIn = '/home/pliu/git_repo/10_datasets/SIENA_Standardized'
+# # # labelFile = '/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv'
+# # # folerInchb = '/home/pliu/git_repo/CNN/CHBMIT_Standardized'
+# # # labelFilechb = '/home/pliu/git_repo/CNN/CHBMIT_Standardized/CHBMITAnnotationsTrue.csv'
+#     # folderInchb = '/home/pliu/testForCNN/CHBCNNtemp'
+#     # labelFilechb = '/home/pliu/testForCNN/CHBCNNtemp/CHBMITAnnotationsTrue.csv'
+# # # folderInchb = '/home/pliu/git_repo/10_datasets/CHBMIT_Standardized'
+# # # labelFilechb = '/home/pliu/git_repo/10_datasets/CHBMIT_Standardized/CHBMITAnnotationsTrue.csv'
+# # # setLabelforCNN('/home/pliu/git_repo/10_datasets/SIENA_Standardized/SIENAAnnotationsTrue.csv')
 # # ###############################
-# # ##CHB
-# chbdataset = EEGDataset(folderInchb,labelFilechb)
-# train_size_chb = int(0.8 * len(chbdataset))
-# val_size_chb = len(chbdataset) - train_size_chb
-# train_dataset_chb, val_dataset_chb = random_split(chbdataset, [train_size_chb, val_size_chb])
-# # train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
-# ################################
-# ####PARAMETER SETUP
-# n_classes = 2
-# batch_size = 512
+# # split the data#################
 # # ###############################
-# # ###SIN
-# # n_chans = 19
-# # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-# # val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-# # whole_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-# # ###############################
-# # ###CHB
-# n_chan_chb = 18
-# # train_loader_chb = DataLoader(train_dataset_chb, batch_size=batch_size, shuffle=True)
-# # val_loader_chb = DataLoader(val_dataset_chb, batch_size=batch_size, shuffle=False)
-# # whole_loader_chb = DataLoader(chbdataset, batch_size=batch_size, shuffle=False)
-# ####################################
-# ### DATASET SIN
-# all_data = []
-# all_labels = []
-# for data, labels in train_loader:
-#     all_data.append(data)
-#     all_labels.append(labels)
-# X_train = torch.cat(all_data)
-# y_train = torch.cat(all_labels)
-# # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
-# val_data = []
-# val_labels = []
-# for data, labels in val_loader:
-#     val_data.append(data)
-#     val_labels.append(labels)
-# X_val = torch.cat(val_data)
-# y_val = torch.cat(val_labels)
+# # ##SIN
+# # dataset = EEGDataset(folderIn,labelFile)
+# # train_size = int(0.8 * len(dataset))
+# # val_size = len(dataset) - train_size
+# # train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+# # # ###############################
+# # # ##CHB
+# # chbdataset = EEGDataset(folderInchb,labelFilechb)
+# # train_size_chb = int(0.8 * len(chbdataset))
+# # val_size_chb = len(chbdataset) - train_size_chb
+# # train_dataset_chb, val_dataset_chb = random_split(chbdataset, [train_size_chb, val_size_chb])
+# # # train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+# # ################################
+# # ####PARAMETER SETUP
+# # n_classes = 2
+# # batch_size = 512
+# # # ###############################
+# # # ###SIN
+# # # n_chans = 19
+# # # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+# # # val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+# # # whole_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+# # # ###############################
+# # # ###CHB
+# # n_chan_chb = 18
+# # # train_loader_chb = DataLoader(train_dataset_chb, batch_size=batch_size, shuffle=True)
+# # # val_loader_chb = DataLoader(val_dataset_chb, batch_size=batch_size, shuffle=False)
+# # # whole_loader_chb = DataLoader(chbdataset, batch_size=batch_size, shuffle=False)
+# # ####################################
+# # ### DATASET SIN
+# # all_data = []
+# # all_labels = []
+# # for data, labels in train_loader:
+# #     all_data.append(data)
+# #     all_labels.append(labels)
+# # X_train = torch.cat(all_data)
+# # y_train = torch.cat(all_labels)
+# # # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
+# # val_data = []
+# # val_labels = []
+# # for data, labels in val_loader:
+# #     val_data.append(data)
+# #     val_labels.append(labels)
+# # X_val = torch.cat(val_data)
+# # y_val = torch.cat(val_labels)
+# # # print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
+# # ####################################
+# # # DATASET CHB
+# # all_data_chb = []
+# # all_labels_chb = []
+# # for data, labels in train_loader_chb:
+# #     all_data_chb.append(data)
+# #     all_labels_chb.append(labels)
+# # X_train_chb = torch.cat(all_data_chb)
+# # y_train_chb = torch.cat(all_labels_chb)
+# # # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
+# # val_data_chb = []
+# # val_labels_chb = []
+# # for data, labels in val_loader_chb:
+# #     val_data_chb.append(data)
+# #     val_labels_chb.append(labels)
+# # X_val_chb = torch.cat(val_data_chb)
+# # y_val_chb = torch.cat(val_labels_chb)
 # # print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
-# ####################################
-# # DATASET CHB
-# all_data_chb = []
-# all_labels_chb = []
-# for data, labels in train_loader_chb:
-#     all_data_chb.append(data)
-#     all_labels_chb.append(labels)
-# X_train_chb = torch.cat(all_data_chb)
-# y_train_chb = torch.cat(all_labels_chb)
-# # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
-# val_data_chb = []
-# val_labels_chb = []
-# for data, labels in val_loader_chb:
-#     val_data_chb.append(data)
-#     val_labels_chb.append(labels)
-# X_val_chb = torch.cat(val_data_chb)
-# y_val_chb = torch.cat(val_labels_chb)
-# print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
-########################################### 
-# ###TRAINING
-# print("Training")
+# ########################################### 
+# # ###TRAINING
+# # print("Training")
 
-# kf = KFold(n_splits=5, shuffle=True, random_state=42)
-# print("kf=",kf.split(chbdataset))
-# for fold, (train_idx, val_idx) in enumerate(kf.split(chbdataset)):
-#     print(f"Training fold {fold + 1}")
-#     print("train_idx",train_idx)
-#     # 根据索引分割数据集
-#     train_data = Subset(chbdataset, train_idx)
-#     val_data = Subset(chbdataset, val_idx)
+# # kf = KFold(n_splits=5, shuffle=True, random_state=42)
+# # print("kf=",kf.split(chbdataset))
+# # for fold, (train_idx, val_idx) in enumerate(kf.split(chbdataset)):
+# #     print(f"Training fold {fold + 1}")
+# #     print("train_idx",train_idx)
+# #     # 根据索引分割数据集
+# #     train_data = Subset(chbdataset, train_idx)
+# #     val_data = Subset(chbdataset, val_idx)
 
-#     # 创建数据加载器
-#     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-#     val_loader = DataLoader(val_data, batch_size=batch_size)
+# #     # 创建数据加载器
+# #     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+# #     val_loader = DataLoader(val_data, batch_size=batch_size)
 
-#     # DATASET CHB
-#     all_data_chb = []
-#     all_labels_chb = []
-#     for data, labels in train_loader:
-#         all_data_chb.append(data)
-#         all_labels_chb.append(labels)
-#     X_train_chb = torch.cat(all_data_chb)
-#     y_train_chb = torch.cat(all_labels_chb)
-#     # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
-#     val_data_chb = []
-#     val_labels_chb = []
-#     for data, labels in val_loader:
-#         val_data_chb.append(data)
-#         val_labels_chb.append(labels)
-#     X_val_chb = torch.cat(val_data_chb)
-#     y_val_chb = torch.cat(val_labels_chb)
-#     print("X_val.shape=",X_val_chb.shape,"y_val.shape=",y_val_chb.shape)
+# #     # DATASET CHB
+# #     all_data_chb = []
+# #     all_labels_chb = []
+# #     for data, labels in train_loader:
+# #         all_data_chb.append(data)
+# #         all_labels_chb.append(labels)
+# #     X_train_chb = torch.cat(all_data_chb)
+# #     y_train_chb = torch.cat(all_labels_chb)
+# #     # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
+# #     val_data_chb = []
+# #     val_labels_chb = []
+# #     for data, labels in val_loader:
+# #         val_data_chb.append(data)
+# #         val_labels_chb.append(labels)
+# #     X_val_chb = torch.cat(val_data_chb)
+# #     y_val_chb = torch.cat(val_labels_chb)
+# #     print("X_val.shape=",X_val_chb.shape,"y_val.shape=",y_val_chb.shape)
 
-#     Train_set_chb=(X_train_chb,y_train_chb)
-#     val_dataset_chb=(X_val_chb,y_val_chb)
-#     print("Train_set_chb=",Train_set_chb[0].shape)
+# #     Train_set_chb=(X_train_chb,y_train_chb)
+# #     val_dataset_chb=(X_val_chb,y_val_chb)
+# #     print("Train_set_chb=",Train_set_chb[0].shape)
 
-#     # model_kfolder = Net(n_chan_chb, n_classes)
-#     # Trainer_chb = trainer(model_kfolder, Train_set_chb, val_dataset_chb, 2)
-#     # learning_rate = 0.001
-#     # Trainer_chb.compile(learning_rate=learning_rate)
-#     # epochs = 10
-#     # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='ktest.pt')
+# #     # model_kfolder = Net(n_chan_chb, n_classes)
+# #     # Trainer_chb = trainer(model_kfolder, Train_set_chb, val_dataset_chb, 2)
+# #     # learning_rate = 0.001
+# #     # Trainer_chb.compile(learning_rate=learning_rate)
+# #     # epochs = 10
+# #     # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='ktest.pt')
 
-#     # print(Tracker)
+# #     # print(Tracker)
 
-#     # # # #CHB-MIT
-#     model_chb = Net(n_chan_chb,n_classes)
-#     model_chb.load_state_dict(torch.load('ktest.pt'))
-#     model_chb.eval()
-#     all_predictions = []
-#     all_labels = []
-#     with torch.no_grad(): 
-#         for data, labels in val_loader:
-#             if torch.cuda.is_available():
-#                 data = data.cuda()
-#                 model_chb = model_chb.cuda()
+# #     # # # #CHB-MIT
+# #     model_chb = Net(n_chan_chb,n_classes)
+# #     model_chb.load_state_dict(torch.load('ktest.pt'))
+# #     model_chb.eval()
+# #     all_predictions = []
+# #     all_labels = []
+# #     with torch.no_grad(): 
+# #         for data, labels in val_loader:
+# #             if torch.cuda.is_available():
+# #                 data = data.cuda()
+# #                 model_chb = model_chb.cuda()
                 
-#             predictions = model_chb(data)
+# #             predictions = model_chb(data)
             
-#             _, predicted_classes = predictions.max(1)
+# #             _, predicted_classes = predictions.max(1)
             
-#             all_predictions.extend(predicted_classes.cpu().numpy())
-#             all_labels.extend(labels.cpu().numpy())
-#     threshold = 0.8
-#     with torch.no_grad():
-#         for data, labels in val_loader:
-#             if torch.cuda.is_available():
-#                 data = data.cuda()
-#                 model_chb = model_chb.cuda()
+# #             all_predictions.extend(predicted_classes.cpu().numpy())
+# #             all_labels.extend(labels.cpu().numpy())
+# #     threshold = 0.8
+# #     with torch.no_grad():
+# #         for data, labels in val_loader:
+# #             if torch.cuda.is_available():
+# #                 data = data.cuda()
+# #                 model_chb = model_chb.cuda()
                 
-#             outputs = model_chb(data)
-#             probabilities = torch.softmax(outputs, dim=1)[:, 1]  
-#             predicted_classes = (probabilities > threshold).long()
+# #             outputs = model_chb(data)
+# #             probabilities = torch.softmax(outputs, dim=1)[:, 1]  
+# #             predicted_classes = (probabilities > threshold).long()
 
-#             all_predictions.extend(predicted_classes.cpu().numpy())
-#             all_labels.extend(labels.cpu().numpy())
+# #             all_predictions.extend(predicted_classes.cpu().numpy())
+# #             all_labels.extend(labels.cpu().numpy())
 
-#     accuracy = accuracy_score(all_labels, all_predictions)
-#     print(f'Accuracy: {accuracy}')
-#     precision = precision_score(all_labels, all_predictions)
-#     sensitivity = recall_score(all_labels, all_predictions)
-#     F1 = (2*precision*sensitivity) / (precision+sensitivity)
+# #     accuracy = accuracy_score(all_labels, all_predictions)
+# #     print(f'Accuracy: {accuracy}')
+# #     precision = precision_score(all_labels, all_predictions)
+# #     sensitivity = recall_score(all_labels, all_predictions)
+# #     F1 = (2*precision*sensitivity) / (precision+sensitivity)
 
-#     print(f'Precision: {precision}')
-#     print(f'Sensitivity: {sensitivity}')
-#     print(f'F1:{F1}') 
+# #     print(f'Precision: {precision}')
+# #     print(f'Sensitivity: {sensitivity}')
+# #     print(f'F1:{F1}') 
