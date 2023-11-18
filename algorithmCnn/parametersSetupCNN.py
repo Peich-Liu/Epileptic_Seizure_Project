@@ -92,18 +92,19 @@ with open('../PARAMETERS.pickle', 'wb') as f:
 #         sample = torch.from_numpy(eegDataArray).float()
 
 class EEGDataset(Dataset):
-    def __init__(self, standDir, folderIn, seizure_info_df,samplFreq, winLen, winStep):
+    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
         self.folderIn = folderIn
         self.sampling_rate = samplFreq
         self.window_size = winLen * samplFreq
         self.step_size =  winStep * samplFreq 
+        # print("window_size=",self.window_size,"step_size=",self.step_size)
         self.edfFiles = []
-        print(folderIn)
+        print("folderIn=",folderIn)
         for folder in folderIn:
             # print(folder)
             edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
             self.edfFiles.extend(edfFilesInFolder)
-        self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
+        # self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
         self.current_file_index = 0
         self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
         self.current_file_length = self.current_data.shape[0]
@@ -125,18 +126,32 @@ class EEGDataset(Dataset):
         # self.balance_data()
         
         for file_idx, file_path in enumerate(self.edfFiles):
+            # print("self.edfFiles=",len(self.edfFiles))
             # num_windows = self.current_file_length // self.window_size
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
-            print("num_windows=",num_windows)
+            # print("num_windows=",num_windows)
             for within_file_idx in range(num_windows):
-                start = within_file_idx * self.window_size
+                start = within_file_idx * self.step_size
                 end = start + self.window_size
-
+                # print("start=",start,"end=",end)
                 if file_path in self.file_to_seizure:
                     seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
-                    label = 1 if seizureStart < end and seizureEnd > start and 'sz' in seizureType else 0
+                    if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
+                        label = 1
+                        # print("file_path=",file_path)
+                        # print("start=",start,"end=",end)
+                        # print("seizureStart=",seizureStart*256,"seizureEnd",seizureEnd*256)
+                    else:
+                        label = 0
+                    
                 else:
                     label = 0
+                # if file_path in self.file_to_seizure:
+                #     seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
+                #     # label = 1 if seizureStart < end and seizureEnd > start and 'sz' in seizureType else 0
+                #     label = 1 if seizureStart < end and seizureEnd > start else 0
+                # else:
+                #     label = 0
 
                 self.window_indices.append((file_idx, within_file_idx, label))
 
@@ -197,13 +212,12 @@ class EEGDataset(Dataset):
         window = self.current_data[start:end].to_numpy()
         self.index_within_file += self.window_size
         # print("seizureStart=",seizureStart,"seizureEnd",seizureEnd,"seizureType",seizureType)
-        # 生成标签
         # label = self.generate_label(window_start, window_end, seizure_start, seizure_end)
         # label = self.generate_label(start, end, seizureStart, seizureEnd, seizureType)
         # print("label=", label)
         window_tensor = torch.tensor(window, dtype=torch.float)
         window_tensor = window_tensor.transpose(0, 1) 
-
+        print("window_tensor",window_tensor)
         return window_tensor, torch.tensor(label, dtype=torch.long)
         # return torch.tensor(window, dtype=torch.float), torch.tensor(label, dtype=torch.long)
         
