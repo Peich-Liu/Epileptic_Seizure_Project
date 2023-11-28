@@ -91,15 +91,18 @@ with open('../PARAMETERS.pickle', 'wb') as f:
 
 #         sample = torch.from_numpy(eegDataArray).float()
 
+# The `EEGDataset` class is a custom dataset class for loading and processing EEG data from EDF files,
+# with support for balancing the data based on seizure labels.
 class EEGDataset(Dataset):
     def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
         self.folderIn = folderIn
+        self.file_data = {} 
         self.sampling_rate = samplFreq
         self.window_size = winLen * samplFreq
         self.step_size =  winStep * samplFreq 
         # print("window_size=",self.window_size,"step_size=",self.step_size)
         self.edfFiles = []
-        print("folderIn=",folderIn)
+        # print("folderIn=",folderIn)
         for folder in folderIn:
             # print(folder)
             edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
@@ -126,33 +129,23 @@ class EEGDataset(Dataset):
         # self.balance_data()
         
         for file_idx, file_path in enumerate(self.edfFiles):
-            # print("self.edfFiles=",len(self.edfFiles))
-            # num_windows = self.current_file_length // self.window_size
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
-            # print("num_windows=",num_windows)
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
                 end = start + self.window_size
-                # print("start=",start,"end=",end)
                 if file_path in self.file_to_seizure:
                     seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
                     if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
                         label = 1
-                        # print("file_path=",file_path)
-                        # print("start=",start,"end=",end)
-                        # print("seizureStart=",seizureStart*256,"seizureEnd",seizureEnd*256)
                     else:
                         label = 0
                     
                 else:
                     label = 0
-                # if file_path in self.file_to_seizure:
-                #     seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
-                #     # label = 1 if seizureStart < end and seizureEnd > start and 'sz' in seizureType else 0
-                #     label = 1 if seizureStart < end and seizureEnd > start else 0
-                # else:
-                #     label = 0
-
+                
+                if end > self.current_file_length:
+                    print("skip")
+                    continue
                 self.window_indices.append((file_idx, within_file_idx, label))
 
         label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
@@ -162,83 +155,96 @@ class EEGDataset(Dataset):
         print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
         self.balanced_window_indices = sampled_label_0_indices + label_1_indices
         random.shuffle(self.balanced_window_indices)
+        # print("self.balanced_window_indices=",self.balanced_window_indices)
 
 
     def __len__(self):
-        # This will be a rough estimate. You might need to adjust it based on the actual number of windows available.
-        # return len(self.edfFiles) * (self.current_file_length // self.window_size)
         return len(self.balanced_window_indices)
+    
     def __getitem__(self, idx):
-        # if self.index_within_file >= self.current_file_length - self.window_size:
-        #     # Move to the next file
-        #     self.current_file_index += 1
-        #     if self.current_file_index >= len(self.edfFiles):
-        #         raise StopIteration
-        #     self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
-        #     self.current_file_length = self.current_data.shape[0]
-        #     self.index_within_file = 0
-        # file_idx = idx // (self.current_file_length // self.window_size)
-        # within_file_idx = idx % (self.current_file_length // self.window_size)
-        # for folder in self.folderIn:
-        #     # print(folder)
-        #     edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
-        #     self.edfFiles.extend(edfFilesInFolder)
+        # print("idx:", idx)
+        # file_idx, within_file_idx, label = self.balanced_window_indices[idx]
+        # self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(file_idx)
         file_idx, within_file_idx, label = self.balanced_window_indices[idx]
-        self.current_file_index = file_idx
-        self.index_within_file = within_file_idx * self.window_size
-        
-        # file range
-        if self.current_file_index >= len(self.edfFiles):
-            raise IndexError("Index out of range")
-        
-        filepath = self.edfFiles[self.current_file_index]
-
-        if filepath in self.file_to_seizure:
-            seizureStart, seizureEnd, seizureType = self.file_to_seizure[filepath]
-        else:
-            seizureStart, seizureEnd, seizureType = None, None, None
-        
-        start = self.index_within_file
+        # if self.edfFiles[file_idx] not in self.file_data:
+        #     self.load_file(file_idx)
+        #     print("load")
+        start = within_file_idx * self.step_size
         end = start + self.window_size
-        # window_start = self.fileStartTime + (start / self.sampleFreq)
-        # window_end = self.fileStartTime + (end / self.sampleFreq)
-
-        # start_offset = timedelta(seconds=start / self.sampleFreq)
-        # end_offset = timedelta(seconds=end / self.sampleFreq)
-        # window_start = self.fileStartTime + start_offset
-        # window_end = self.fileStartTime + end_offset
-
-
+        # if end > len(self.current_data):
+        #     raise IndexError("Index out of range")
         window = self.current_data[start:end].to_numpy()
-        self.index_within_file += self.window_size
-        # print("seizureStart=",seizureStart,"seizureEnd",seizureEnd,"seizureType",seizureType)
-        # label = self.generate_label(window_start, window_end, seizure_start, seizure_end)
-        # label = self.generate_label(start, end, seizureStart, seizureEnd, seizureType)
-        # print("label=", label)
         window_tensor = torch.tensor(window, dtype=torch.float)
-        window_tensor = window_tensor.transpose(0, 1) 
-        print("window_tensor",window_tensor)
-        return window_tensor, torch.tensor(label, dtype=torch.long)
-        # return torch.tensor(window, dtype=torch.float), torch.tensor(label, dtype=torch.long)
-        
+        window_tensor = window_tensor.transpose(0, 1)
+        # print("window_tensor=",window_tensor.shape,"file_idx=",file_idx)
+        if(window_tensor.shape != torch.Size([18, 1024])):
+            print("error=",window_tensor)
+        return window_tensor, torch.tensor(label, dtype=torch.long)      
+    
+    # def load_file(self, file_index):
+    #     filepath = self.edfFiles[file_index]
+    #     if filepath in self.file_data:
+    #         return self.file_data[filepath]  # 如果已加载，则返回存储的数据
+
+    #     eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+    #     self.file_data[filepath] = (eegDataDF, samplFreq, fileStartTime)  # 存储数据以供后续使用
+    #     return eegDataDF, samplFreq, fileStartTime
+    
+    
     def load_file(self, file_index):
+        # print("edfFiles=",self.edfFiles,"file_index=",file_index)
         filepath = self.edfFiles[file_index]
         eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+        # print("eegDataDF=",eegDataDF)
         return eegDataDF, samplFreq, fileStartTime
     
-    def generate_label(self, window_start, window_end, seizure_start, seizure_end, szType):
-        # print("window_start=",window_start,"window_end",window_end,"seizure_start",seizure_start,"seizure_end",seizure_end)
-        # if 'sz' not in szType:
-        #     return 0
-        # if seizure_start is None or seizure_end is None:
-        #     return 0
-        # label = 1 if (seizure_start < window_end and seizure_end > window_start and 'sz' in szType) else 0
-        if (seizure_start < window_end and seizure_end > window_start and 'sz' in szType):
-            label = 1
-            # print("szType=",szType,"seizure_start=",seizure_start)
-        else:
-            label = 0
-        return label
+    
+    
+    
+    
+    
+    
+        # file_idx, within_file_idx, label = self.balanced_window_indices[idx]
+        # self.current_file_index = file_idx
+        # self.index_within_file = within_file_idx * self.window_size
+        
+        # # file range
+        # if self.current_file_index >= len(self.edfFiles):
+        #     raise IndexError("Index out of range")
+        
+        # filepath = self.edfFiles[self.current_file_index]
+
+        # if filepath in self.file_to_seizure:
+        #     seizureStart, seizureEnd, seizureType = self.file_to_seizure[filepath]
+        # else:
+        #     seizureStart, seizureEnd, seizureType = None, None, None
+        
+        # start = self.index_within_file
+        # end = start + self.window_size
+
+        # window = self.current_data[start:end].to_numpy()
+        # self.index_within_file += self.step_size
+        # window_tensor = torch.tensor(window, dtype=torch.float)
+        # window_tensor = window_tensor.transpose(0, 1) 
+        # # print("window_tensor",window_tensor.shape)
+        # return window_tensor, torch.tensor(label, dtype=torch.long)
+        # # return torch.tensor(window, dtype=torch.float), torch.tensor(label, dtype=torch.long)
+        
+
+    
+    # def generate_label(self, window_start, window_end, seizure_start, seizure_end, szType):
+    #     # print("window_start=",window_start,"window_end",window_end,"seizure_start",seizure_start,"seizure_end",seizure_end)
+    #     # if 'sz' not in szType:
+    #     #     return 0
+    #     # if seizure_start is None or seizure_end is None:
+    #     #     return 0
+    #     # label = 1 if (seizure_start < window_end and seizure_end > window_start and 'sz' in szType) else 0
+    #     if (seizure_start < window_end and seizure_end > window_start and 'sz' in szType):
+    #         label = 1
+    #         # print("szType=",szType,"seizure_start=",seizure_start)
+    #     else:
+    #         label = 0
+    #     return label
     
     # def calculate_window_indices(self):
     #     self.window_indices = []
