@@ -14,10 +14,10 @@ from trainer import *
 from sklearn.model_selection import KFold
 # # # #####################################################
 # # # SIENA DATASET
-# # dataset='SIENA'
-# # rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-# # rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
-# # DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar
+# dataset='SIENA'
+# rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
+# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
+# DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar
 
 # # # # SEIZIT DATASET
 # # # dataset='SeizIT1'
@@ -25,7 +25,7 @@ from sklearn.model_selection import KFold
 # # # rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
 # # # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
-# CHBMIT DATASET
+# # CHBMIT DATASET
 dataset='CHBMIT'
 rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
 rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
@@ -100,13 +100,13 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 GeneralParamsCNN.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
 GeneralParamsCNN.patients.sort() #Sorting them
 # GeneralParams.patients=GeneralParams.patients[0:3]
-
-# dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-# #
+# dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParamsCNN.patients, None,DatasetPreprocessParamsCNN.channelNamesToKeep, TrueAnnotationsFile)
+# print("dataAllSubj=",dataAllSubj)
 print('TRAINING') # run leave-one-subject-out CV
 NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
 AllRes_test=np.zeros((len(GeneralParamsCNN.patients),27))
 
+patient_indices = {patient: idx for idx, patient in enumerate(GeneralParamsCNN.patients)}
 NsubjPerK=int(np.ceil(len(GeneralParamsCNN.patients)/GeneralParamsCNN.GenCV_numFolds))
 for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
     patientsToTest=GeneralParamsCNN.patients[kIndx*NsubjPerK:(kIndx+1)*NsubjPerK]
@@ -121,8 +121,11 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
     # FOLDER SETUP
     folderDf = annotationsTrue[annotationsTrue['subject'].isin(patientsToTest)]
     for test_patient in patientsToTest:
+        
+        patient_index = patient_indices[test_patient]
         trainPatients = [p for p in patientsToTest if p != test_patient]
-        #GENERATE LABEL
+        print("test_patient=",test_patient)
+        print("trainPatients=",trainPatients)
         # FOLDER SETUP
         trainFolders = [os.path.join(outDir, p) for p in trainPatients]
         trainLabels = folderDf[folderDf['subject'] != test_patient ]
@@ -135,7 +138,7 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         #temp modify
         # outDir = '/home/pliu/testForCNN/CHBCNNtemp'
         trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
-        testSet = EEGDataset(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
+        testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
         
         train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)
@@ -162,63 +165,114 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         
         test_data = []
         test_labels = []
+        test_labels_for_visual = []
         for data, labels in test_loader:
             test_data.append(data)
             test_labels.append(labels)
+            test_labels_for_visual.extend(labels.numpy())
+        print("test_data567=",test_data)
         X_val = torch.cat(test_data)
         y_val = torch.cat(test_labels)
         print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
-        # TRAINING
+        # # TRAINING
 
-        Train_set_chb=(X_train,y_train)
-        val_dataset_chb=(X_val,y_val)
-        print("Train_set_chb=",Train_set_chb[0].shape)
+        # Train_set_chb=(X_train,y_train)
+        # val_dataset_chb=(X_val,y_val)
+        # print("Train_set_chb=",Train_set_chb[0].shape)
 
-        Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
-        learning_rate = 0.001
-        Trainer_chb.compile(learning_rate=learning_rate)
-        epochs = 20
-        Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp.pt')
+        # Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
+        # learning_rate = 0.001
+        # Trainer_chb.compile(learning_rate=learning_rate)
+        # epochs = 20
+        # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_{}.pt'.format(test_patient))
         # print(Tracker)        
         # #EVALUATE NAIVE
+        (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+        print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
         
-        model = Net(n_channel,n_classes)
-        model.load_state_dict(torch.load('temp.pt'))
-        model.eval()
-        all_predictions = []
-        all_labels = []
-        with torch.no_grad(): 
-            for data, labels in test_loader:
-                if torch.cuda.is_available():
-                    data = data.cuda()
-                    model = model.cuda()
+        # measure performance
+        AllRes_test[patient_index, 0:9] = performance_sampleAndEventBased(predLabels_test, test_labels_for_visual, PerformanceParams)
+        # test smoothing - movtest_patient=ng average
+        predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
+        AllRes_test[patient_index, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, test_labels_for_visual, PerformanceParams)
+        # test smoothing - moving average
+        predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
+        AllRes_test[patient_index, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, test_labels_for_visual, PerformanceParams)
+        outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
+        saveDataToFile(AllRes_test, outputName, 'csv')
+
+        #visualize predictions
+        outName=outPredictionsFolder + '/'+ test_patient+'_PredictionsInTime'
+        plotPredictionsMatchingInTime(test_labels_for_visual, predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
+
+        # print("predLabels_test",predLabels_test)
+
+#         # Saving predicitions in time
+#         dataToSave = np.vstack((test_labels_for_visual, probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
+#         dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
+#         outputName = outPredictionsFolder + '/Subj' + test_patient + '_'+'CNN'+'_TestPredictions.csv'
+#         saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
+
+#         # CREATE ANNOTATION FILE
+#         predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
+# #         testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+#         annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+#         annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
+#         if (patIndx==0):
+#             annotationAllSubjPred=annotationAllPred
+#         else:
+#             annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
+#         #save every time, just for backup
+#         PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+#         annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+# #         # model = Net(n_channel,n_classes)
+# #         # model.load_state_dict(torch.load('temp.pt'))
+# #         # model.eval()
+# #         # all_predictions = []
+# #         # all_labels = []
+# #         # with torch.no_grad(): 
+# #         #     for data, labels in test_loader:
+# #         #         if torch.cuda.is_available():
+# #         #             data = data.cuda()
+# #         #             model = model.cuda()
                     
-                predictions = model(data)
+# #         #         predictions = model(data)
                 
-                _, predicted_classes = predictions.max(1)
+# #         #         _, predicted_classes = predictions.max(1)
                 
-                all_predictions.extend(predicted_classes.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
-        threshold = 0.5
-        with torch.no_grad():
-            for data, labels in test_loader:
-                if torch.cuda.is_available():
-                    data = data.cuda()
-                    model = model.cuda()
+# #         #         all_predictions.extend(predicted_classes.cpu().numpy())
+# #         #         all_labels.extend(labels.cpu().numpy())
+# #         # threshold = 0.5
+# #         # with torch.no_grad():
+# #         #     for data, labels in test_loader:
+# #         #         if torch.cuda.is_available():
+# #         #             data = data.cuda()
+# #         #             model = model.cuda()
                     
-                outputs = model(data)
-                probabilities = torch.softmax(outputs, dim=1)[:, 1]  
-                predicted_classes = (probabilities > threshold).long()
+# #         #         outputs = model(data)
+# #         #         probabilities = torch.softmax(outputs, dim=1)[:, 1]  
+# #         #         predicted_classes = (probabilities > threshold).long()
 
-                all_predictions.extend(predicted_classes.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
+# #         #         all_predictions.extend(predicted_classes.cpu().numpy())
+# #         #         all_labels.extend(labels.cpu().numpy())
 
-        accuracy = accuracy_score(all_labels, all_predictions)
-        print(f'Accuracy: {accuracy}')
-        precision = precision_score(all_labels, all_predictions)
-        sensitivity = recall_score(all_labels, all_predictions)
-        F1 = (2*precision*sensitivity) / (precision+sensitivity)
+# #         # accuracy = accuracy_score(all_labels, all_predictions)
+# #         # print(f'Accuracy: {accuracy}')
+# #         # precision = precision_score(all_labels, all_predictions)
+# #         # sensitivity = recall_score(all_labels, all_predictions)
+# #         # F1 = (2*precision*sensitivity) / (precision+sensitivity)
 
-        print(f'Precision: {precision}')
-        print(f'Sensitivity: {sensitivity}')
-        print(f'F1:{F1}')
+# #         # print(f'Precision: {precision}')
+# #         # print(f'Sensitivity: {sensitivity}')
+# #         # print(f'F1:{F1}')
+# # #

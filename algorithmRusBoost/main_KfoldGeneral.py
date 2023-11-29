@@ -7,11 +7,11 @@ from evaluate.evaluate import *
 import os
 
 #####################################################
-# # SIENA DATASET
-# dataset='SIENA'
-# rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
-# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
-# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+# SIENA DATASET
+dataset='SIENA'
+rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
+rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
+DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
 # # SEIZIT DATASET
 # dataset='SeizIT1'
@@ -19,11 +19,11 @@ import os
 # # rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
 # DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
 
-# CHBMIT DATASET
-dataset='CHBMIT'
-rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
-rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
-DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
+# # CHBMIT DATASET
+# dataset='CHBMIT'
+# rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
+# rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
+# DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
 
 #####################################################
 # SET DIFFERENT PARAMETERS
@@ -122,7 +122,7 @@ GeneralParams.patients.sort() #Sorting them
 # GeneralParams.patients=GeneralParams.patients[0:3]
 
 dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-# print(dataAllSubj)
+print(dataAllSubj)
 ##################################
 print('TRAINING') # run leave-one-subject-out CV
 NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
@@ -189,7 +189,7 @@ for kIndx in range(GeneralParams.GenCV_numFolds):
         AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testData['Labels'].to_numpy(), PerformanceParams)
         outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
         saveDataToFile(AllRes_test, outputName, 'csv')
-
+        
         #visualize predictions
         outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
         plotPredictionsMatchingInTime(testData['Labels'].to_numpy(), predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
@@ -221,6 +221,9 @@ print('EVALUATING PERFORMANCE')
 labelFreq=1/FeaturesParams.winStep
 TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+#temp
+# PredictedAnnotationsFile = '/home/pliu/01_General_RUSboost_WinStep[0.391,0.391]_withNetwork_0.95th/SIENAAnnotationPredictions.csv'
+
 # Calcualte performance per file by comparing true annotations file and the one created by ML training
 paramsPerformance = scoring.EventScoring.Parameters(
     toleranceStart=PerformanceParams.toleranceStart,

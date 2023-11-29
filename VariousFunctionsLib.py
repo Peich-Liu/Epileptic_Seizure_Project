@@ -20,6 +20,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import AdaBoostClassifier
+from sklearn.metrics import accuracy_score
+from algorithmCnn.architecture import *
 from imblearn.ensemble import RUSBoostClassifier
 import scipy.io
 from scipy import signal
@@ -30,7 +32,7 @@ from timescoring.annotations import Annotation
 from timescoring import scoring
 from timescoring import visualization
 from new_feature_calculate import *
-
+import torch
 
 def bandpower(x, fs, fmin, fmax):
     ''' Function that calculates energy of specific frequency band of FFT spectrum
@@ -1479,3 +1481,62 @@ def setLabelforCNN(labelsFile):
 #             return 0
 #         label = 1 if (seizure_start < window_end and seizure_end > window_start) else 0
 #         return label
+
+def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, threshold=0.5):
+    ''' 
+    Test a deep learning model and returns predictions, probabilities, and accuracies.
+
+    Args:
+        test_loader: DataLoader for test dataset.
+        model_path: Path to the trained model file.
+        n_channel: Number of channels in input data.
+        n_classes: Number of output classes.
+        threshold: Threshold for probability to decide class label.
+
+    Returns:
+        y_pred: Predicted labels.
+        y_probability_fin: Probability of the predicted labels.
+        acc: Overall accuracy of the model.
+        accPerClass: Accuracy per class.
+    '''
+
+    # Load model
+    model = Net(n_channel, n_classes)
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+
+    all_predictions = []
+    all_probabilities = []
+    all_labels = []
+
+    with torch.no_grad():
+        for data, labels in test_loader:
+            if torch.cuda.is_available():
+                data = data.cuda()
+                model = model.cuda()
+
+            outputs = model(data)
+            probabilities = torch.softmax(outputs, dim=1)
+            
+            predicted_classes = (probabilities[:, 1] > threshold).long()
+            all_predictions.extend(predicted_classes.cpu().numpy())
+            all_probabilities.extend(probabilities.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+
+    # Convert to numpy arrays
+    y_pred = np.array(all_predictions)
+    y_probability_fin = np.array(all_probabilities)
+
+    # Calculate overall accuracy
+    acc = accuracy_score(all_labels, y_pred)
+
+    # Calculate accuracy per class
+    accPerClass = []
+    for l in range(n_classes):
+        indices = np.where(np.array(all_labels) == l)
+        class_acc = accuracy_score(np.array(all_labels)[indices], y_pred[indices])
+        accPerClass.append(class_acc)
+
+    accPerClass = np.array(accPerClass)
+
+    return y_pred, y_probability_fin, acc, accPerClass

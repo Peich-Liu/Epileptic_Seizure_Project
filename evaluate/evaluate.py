@@ -72,6 +72,8 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
         refDf=refDf.drop_duplicates(keep=False, inplace= False)
     # print("refDF=",refDf)
     for filepath, _ in refDf.groupby(['filepath']):
+    # for filepath_tuple, _ in refDf.groupby(['filepath']):
+    #     filepath = filepath_tuple[0]
         # fs = 256
         try:
             filtered_df = refDf[refDf.filepath == filepath[0]]
@@ -96,10 +98,11 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
         # Compute performance
         scoresEvent = scoring.EventScoring(ref, hyp, params)
         scoresSample = scoring.SampleScoring(ref, hyp)
-
+        print("scoresEvent.sensitivity",scoresEvent.sensitivity)
+        print("scoresSample",scoresSample.sensitivity)
         # Collect results
         for key in ['subject', 'session', 'recording', 'dateTime', 'duration', 'filepath']:
-            results[key].append(refDf[refDf.filepath == filepath][key].iloc[0])
+            results[key].append(refDf[refDf.filepath == filepath[0]][key].iloc[0])#123123123123123
         results['Event_numEvents'].append(scoresEvent.refTrue)
         results['Event_numTP'].append(scoresEvent.tp)
         results['Event_numFP'].append(scoresEvent.fp)

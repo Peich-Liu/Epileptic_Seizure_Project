@@ -133,12 +133,13 @@ class EEGDataset(Dataset):
         label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
-        sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
-        self.balanced_window_indices = sampled_label_0_indices
-        random.shuffle(self.balanced_window_indices)
-        # print("self.balanced_window_indices=",self.balanced_window_indices)
+        self.balanced_window_indices = label_0_indices
+        # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
+        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
+        # # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
+        # self.balanced_window_indices = sampled_label_0_indices
+        # random.shuffle(self.balanced_window_indices)
+        print("self.balanced_window_indices=",len(self.balanced_window_indices))
     def __len__(self):
         return len(self.balanced_window_indices)
     
@@ -223,17 +224,17 @@ class EEGDatasetTest(Dataset):
         label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
-        sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        self.balanced_window_indices = sampled_label_0_indices + label_1_indices
+        # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
+        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
+        self.test_window_indices = label_0_indices + label_1_indices
         # self.balanced_window_indices = sampled_label_0_indices
-        random.shuffle(self.balanced_window_indices)
+        # random.shuffle(self.balanced_window_indices)
         # print("self.balanced_window_indices=",self.balanced_window_indices)
     def __len__(self):
-        return len(self.balanced_window_indices)
+        return len(self.test_window_indices)
     
     def __getitem__(self, idx):
-        file_idx, within_file_idx, label = self.balanced_window_indices[idx]
+        file_idx, within_file_idx, label = self.test_window_indices[idx]
         start = within_file_idx * self.step_size
         end = start + self.window_size
         window = self.current_data[start:end].to_numpy()
