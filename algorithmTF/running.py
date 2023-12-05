@@ -412,7 +412,7 @@ class AnomalyRunner(BaseRunner):
         super(AnomalyRunner, self).__init__(*args, **kwargs)
         self.analyzer = analysis.Analyzer(print_conf_mat=True)
 
-    def train_epoch(self, epoch_num=None):
+    def train_epoch(self, epoch_num=None, outputDir=None):
 
         self.model = self.model.train()
 
@@ -460,6 +460,14 @@ class AnomalyRunner(BaseRunner):
         epoch_loss = epoch_loss / total_active_elements  # average loss per element for whole epoch
         self.epoch_metrics['epoch'] = epoch_num
         self.epoch_metrics['loss'] = epoch_loss
+        file_path = os.path.join(outputDir, 'model_epoch_{}.pth'.format(epoch_num))
+        torch.save(self.model.state_dict(), file_path.format(epoch_num))
+        torch.save({
+            'epoch': epoch_num,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'loss': epoch_loss,
+        }, 'checkpoint_epoch_{}.pth'.format(epoch_num))
         return self.epoch_metrics
 
     def evaluate(self, epoch_num=None, keep_all=True):

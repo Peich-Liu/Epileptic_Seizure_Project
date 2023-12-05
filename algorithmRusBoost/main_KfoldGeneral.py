@@ -102,16 +102,16 @@ TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
 annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 print("TrueAnnotationsFile=",TrueAnnotationsFile)
 # # #####################################################
-# # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+# EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
 # calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
-# #
-# # # # CALCULATE KL DIVERGENCE OF FEATURES
-# # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-# # GeneralParams.patients.sort() #Sorting them
-# # FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-# # calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+#
+# # # CALCULATE KL DIVERGENCE OF FEATURES
+# GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+# GeneralParams.patients.sort() #Sorting them
+# FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+# calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
-# # ####################################################
+# # # ####################################################
 # # TRAIN GENERALIZED MODEL
 #
 ## LOAD ALL DATA OF ALL SUBJECTS
@@ -123,7 +123,7 @@ GeneralParams.patients.sort() #Sorting them
 
 dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
 print(dataAllSubj)
-##################################
+# ##################################
 print('TRAINING') # run leave-one-subject-out CV
 NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
 AllRes_test=np.zeros((len(GeneralParams.patients),27))
@@ -194,7 +194,7 @@ for kIndx in range(GeneralParams.GenCV_numFolds):
         outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
         plotPredictionsMatchingInTime(testData['Labels'].to_numpy(), predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
 
-
+        print("probabLab_test",probabLab_test)
         # Saving predicitions in time
         dataToSave = np.vstack((testData['Labels'].to_numpy(), probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
         dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
@@ -204,8 +204,9 @@ for kIndx in range(GeneralParams.GenCV_numFolds):
         # CREATE ANNOTATION FILE
         predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
         testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+        # print("testData[NonFeatureColumns].reset_index(drop=True)",testData[NonFeatureColumns].reset_index(drop=True))
         annotationsTrue=readDataFromFile(TrueAnnotationsFile)
-        annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
+        annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_MovAvrg')
         if (patIndx==0):
             annotationAllSubjPred=annotationAllPred
         else:

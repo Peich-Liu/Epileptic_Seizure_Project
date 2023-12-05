@@ -1,10 +1,11 @@
 import sys
+import os
 sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
 from parametersSetupCNN import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
-import os
+
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.utils.data import Subset
 from torch import nn
@@ -43,7 +44,7 @@ if (DatasetPreprocessParamsCNN.eegDataNormalization==''):
         winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']'+ '/'
 else:
     outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNN.eegDataNormalization+'/'
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_General_CNN' + '_WinStep[' + str(
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
         winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']_' + '-'.join(
         winParamsCNN.featNames) + '/'
 os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
@@ -120,12 +121,13 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
     n_channel = len(DatasetPreprocessParamsCNN.channelNamesToKeep)
     # FOLDER SETUP
     folderDf = annotationsTrue[annotationsTrue['subject'].isin(patientsToTest)]
-    for test_patient in patientsToTest:
-        
+    for p, test_patient in enumerate(patientsToTest):
+        patIndx = kIndx*NsubjPerK+p
+        # print("i, test_patient",patIndx, test_patient)
         patient_index = patient_indices[test_patient]
         trainPatients = [p for p in patientsToTest if p != test_patient]
-        print("test_patient=",test_patient)
-        print("trainPatients=",trainPatients)
+        # print("test_patient=",test_patient)
+        # print("trainPatients=",trainPatients)
         # FOLDER SETUP
         trainFolders = [os.path.join(outDir, p) for p in trainPatients]
         trainLabels = folderDf[folderDf['subject'] != test_patient ]
@@ -139,9 +141,22 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         # outDir = '/home/pliu/testForCNN/CHBCNNtemp'
         trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
         testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
-        
+        test_data_pred = []
+        for i in range(len(testSet)):
+            _, label, additional_info = testSet[i]
+            row = {
+                'Subject': additional_info['subject'],
+                'FileName': additional_info['filepath'],
+                'Time': additional_info['startTime'],
+                'Labels': label.item()  
+            }
+            test_data_pred.append(row)
+        test_data_df = pd.DataFrame(test_data_pred)
+        print("test_data_df=",test_data_df)
+        # test_data_df = None
         train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True,collate_fn=custom_collate_fn)
+        # test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)
         
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Using device:", device)
@@ -166,11 +181,14 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         test_data = []
         test_labels = []
         test_labels_for_visual = []
-        for data, labels in test_loader:
+        for data,labels,_ in test_loader:
+            # data = batch[0]
+            # labels = batch[1]
             test_data.append(data)
             test_labels.append(labels)
             test_labels_for_visual.extend(labels.numpy())
-        print("test_data567=",test_data)
+            
+        # print("test_data567=",test_data)
         X_val = torch.cat(test_data)
         y_val = torch.cat(test_labels)
         print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
@@ -188,7 +206,7 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         # print(Tracker)        
         # #EVALUATE NAIVE
         (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
-        print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
+        # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
         
         # measure performance
         AllRes_test[patient_index, 0:9] = performance_sampleAndEventBased(predLabels_test, test_labels_for_visual, PerformanceParams)
@@ -205,27 +223,103 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         outName=outPredictionsFolder + '/'+ test_patient+'_PredictionsInTime'
         plotPredictionsMatchingInTime(test_labels_for_visual, predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
 
-        # print("predLabels_test",predLabels_test)
+        test_labels_for_visual = np.array(test_labels_for_visual)
+        test_labels_for_visual_reshaped = test_labels_for_visual.reshape(-1, 1)
+        
+        print("test_labels_for_visual",test_labels_for_visual)
+        # predLabels = np.max(probabLab_test, axis=1)
+        predLabels = probabLab_test[:,1]
+        print("probabLab_test",predLabels)
+        print("predLabels_test",predLabels_test)
+        print("predLabels_MovAvrg",predLabels_MovAvrg)
+        # Saving predicitions in time
+        #############
+        #need modify#
+        #############
+        dataToSave = np.vstack((test_labels_for_visual, predLabels, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
+        dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
+        outputName = outPredictionsFolder + '/Subj' + test_patient + '_'+'CNN'+'_TestPredictions.csv'
+        saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
 
-#         # Saving predicitions in time
-#         dataToSave = np.vstack((test_labels_for_visual, probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
-#         dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
-#         outputName = outPredictionsFolder + '/Subj' + test_patient + '_'+'CNN'+'_TestPredictions.csv'
-#         saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
+        # # CREATE ANNOTATION FILE
+        predlabels= np.vstack((predLabels, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
+        testPredictionsDF=pd.concat([test_data_df, pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+        annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+        annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_MovAvrg')
+        if (patIndx==0):
+            annotationAllSubjPred=annotationAllPred
+        else:
+            annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
+        #save every time, just for backup
+        PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+        annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
+        
+#############################################################
+#EVALUATE PERFORMANCE  - Compare two annotation files
+print('EVALUATING PERFORMANCE')
+labelFreq=1/winParamsCNN.winStep
+TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
+PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+# Calcualte performance per file by comparing true annotations file and the one created by ML training
+paramsPerformance = scoring.EventScoring.Parameters(
+    toleranceStart=PerformanceParams.toleranceStart,
+    toleranceEnd=PerformanceParams.toleranceEnd,
+    minOverlap=PerformanceParams.minOveralp,
+    maxEventDuration=PerformanceParams.maxEventDuration,
+    minDurationBetweenEvents=PerformanceParams.minDurationBetweenEvents)
+# performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
+performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, [], labelFreq, paramsPerformance)
+# save performance per file
+PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+performancePerFile.sort_values(by=['filepath']).to_csv(PerformancePerFileName, index=False)
 
-#         # CREATE ANNOTATION FILE
-#         predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
-# #         testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
-#         annotationsTrue=readDataFromFile(TrueAnnotationsFile)
-#         annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
-#         if (patIndx==0):
-#             annotationAllSubjPred=annotationAllPred
-#         else:
-#             annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
-#         #save every time, just for backup
-#         PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
-#         annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
+# Calculate performance per subject
+GeneralParamsCNN.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+GeneralParamsCNN.patients.sort() #Sorting them
+PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+performacePerSubj= recalculatePerfPerSubject(PerformancePerFileName, GeneralParamsCNN.patients, labelFreq, paramsPerformance)
+PerformancePerSubjName = outPredictionsFolder + '/' + dataset + 'PerformancePerSubj.csv'
+performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, index=False)
+# plot performance per subject
+plotPerformancePerSubj(GeneralParamsCNN.patients, performacePerSubj, outPredictionsFolder)
 
+
+### PLOT IN TIME
+for patIndx, pat in enumerate(GeneralParamsCNN.patients):
+    print(pat)
+    InName = outPredictionsFolder + '/Subj' + pat + '_' + 'Cnn' + '_TestPredictions.csv.parquet.gzip'
+    data= readDataFromFile(InName)
+
+    # visualize predictions
+    outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
+    plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+
+
+
+
+
+
+
+
+
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         

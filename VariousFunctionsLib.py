@@ -33,6 +33,7 @@ from timescoring import scoring
 from timescoring import visualization
 from new_feature_calculate import *
 import torch
+from datetime import timedelta
 
 def bandpower(x, fs, fmin, fmax):
     ''' Function that calculates energy of specific frequency band of FFT spectrum
@@ -1510,7 +1511,7 @@ def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, thresh
     all_labels = []
 
     with torch.no_grad():
-        for data, labels in test_loader:
+        for data, labels,_ in test_loader:
             if torch.cuda.is_available():
                 data = data.cuda()
                 model = model.cuda()
@@ -1540,3 +1541,17 @@ def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, thresh
     accPerClass = np.array(accPerClass)
 
     return y_pred, y_probability_fin, acc, accPerClass
+
+from torch.utils.data.dataloader import default_collate
+
+def custom_collate_fn(batch):
+    data_batch = [item[0] for item in batch]  # 收集所有数据
+    label_batch = [item[1] for item in batch]  # 收集所有标签
+    additional_info_batch = [item[2] for item in batch]  # 收集所有 additional_info
+
+    # 使用 default_collate 只对数据和标签进行整合
+    data_batch = default_collate(data_batch)
+    label_batch = default_collate(label_batch)
+
+    # 不对 additional_info_batch 进行整合，直接返回
+    return data_batch, label_batch, additional_info_batch
