@@ -7,10 +7,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import os
 from VariousFunctionsLib import  *
-from datetime import timedelta
+from datetime import timedelta, datetime
 import random
 from multiprocessing import Pool, cpu_count
-
+from tsaug import Reverse, Drift
 class GeneralParamsTF:
     patients=[]  #on which subjects to train and test
     PersCV_MinTrainHours=5 #minimum number of hours we need to start training in personal model
@@ -77,6 +77,7 @@ with open('../PARAMETERS.pickle', 'wb') as f:
 ##############################################################################################
 #### DEEP LEARNING PARAMETER
 class EEGDataset(Dataset):
+#Train dataset
     def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
         self.folderIn = folderIn
         self.file_data = {} 
@@ -134,6 +135,9 @@ class EEGDataset(Dataset):
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
         self.balanced_window_indices = label_0_indices
+        if len(self.balanced_window_indices) > 30000:
+            self.balanced_window_indices = random.sample(self.balanced_window_indices, 30000)
+
         # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
         # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
         # # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
@@ -167,16 +171,15 @@ class EEGDataset(Dataset):
         return eegDataDF, samplFreq, fileStartTime
 # ###################################   
 # #test data class 
-class EEGDatasetTest(Dataset):
+class EEGDataForDL(Dataset):
     def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
         self.folderIn = folderIn
         self.file_data = {} 
         self.sampling_rate = samplFreq
         self.window_size = winLen * samplFreq
         self.step_size =  winStep * samplFreq 
-        # print("window_size=",self.window_size,"step_size=",self.step_size)
+
         self.edfFiles = []
-        # print("folderIn=",folderIn)
         for folder in folderIn:
             # print(folder)
             edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
@@ -195,13 +198,8 @@ class EEGDatasetTest(Dataset):
             if os.path.exists(absolute_path):
                 self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
         self.filepaths = list(self.file_to_seizure.keys())
-        # print("self.filepaths=",self.filepaths)
-        # self.seizure_times = self.readSeizureTimes(labelFile)
-        # unbalanced data modify
         self.window_indices = []
-        # self.calculate_window_indices()
-        # self.balance_data()
-        
+
         for file_idx, file_path in enumerate(self.edfFiles):
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
             for within_file_idx in range(num_windows):
@@ -220,16 +218,16 @@ class EEGDatasetTest(Dataset):
                     print("skip")
                     continue
                 self.window_indices.append((file_idx, within_file_idx, label))
+        self.test_window_indices = self.window_indices
+        self.label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
+        self.label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
+    
+class EEGDatasetTest(EEGDataForDL):
+    def __init__(self):
+        self.balanced_window_indices = self.label_0_indices
+        if len(self.balanced_window_indices) > 30000:
+            self.balanced_window_indices = random.sample(self.balanced_window_indices, 30000)
 
-        label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
-        label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
-
-        # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        self.test_window_indices = label_0_indices + label_1_indices
-        # self.balanced_window_indices = sampled_label_0_indices
-        # random.shuffle(self.balanced_window_indices)
-        # print("self.balanced_window_indices=",self.balanced_window_indices)
     def __len__(self):
         return len(self.test_window_indices)
     
@@ -245,8 +243,6 @@ class EEGDatasetTest(Dataset):
         mask = noise_mask(window, masking_ratio, lm=mean_mask_length, mode='separate', distribution='geometric')
 
         IDs = within_file_idx
-        # IDs = list(IDs)
-        # IDs = [within_file_idx]  
         return window_tensor, torch.tensor(label, dtype=torch.long), IDs
 
     
@@ -387,4 +383,200 @@ def collate_unsuperv(data, max_len=None, mask_compensation=False, task=None, ove
 
     padding_masks = padding_mask(torch.tensor(lengths, dtype=torch.int16), max_len=max_len)  # (batch_size, padded_length) boolean tensor, "1" means keep
     target_masks = ~target_masks  # inverse logic: 0 now means ignore, 1 means predict
+    # print("x",X.shape,"target", targets.shape,"target_masks", target_masks.shape,"padding_masks", padding_masks.shape,"IDs", len(IDs))
     return X, targets, target_masks, padding_masks, IDs
+
+class EEGDatasetTestTF(Dataset):
+    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
+        self.folderIn = folderIn
+        self.standDir = standDir
+        self.file_data = {} 
+        self.sampling_rate = samplFreq
+        self.window_size = winLen * samplFreq
+        self.step_size =  winStep * samplFreq 
+        # print("window_size=",self.window_size,"step_size=",self.step_size)
+        self.edfFiles = []
+        # print("folderIn=",folderIn)
+        for folder in folderIn:
+            # print(folder)
+            edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
+            self.edfFiles.extend(edfFilesInFolder)
+        self.edfFiles.sort()
+        # self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
+        self.current_file_index = 0
+        self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
+        self.current_file_length = self.current_data.shape[0]
+        self.index_within_file = 0
+        # self.seizure_info_df = pd.read_csv(labelFile)
+        self.seizure_info_df = seizure_info_df
+        self.file_to_seizure = {}
+        for _, row in self.seizure_info_df.iterrows():
+            relative_path = row['filepath']
+            absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
+            if os.path.exists(absolute_path):
+                self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
+        self.filepaths = list(self.file_to_seizure.keys())
+
+        # unbalanced data modify
+        self.window_indices = []
+
+        # print("self.edfFiles",self.edfFiles)
+        for file_idx, file_path in enumerate(self.edfFiles):
+            num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
+            for within_file_idx in range(num_windows):
+                start = within_file_idx * self.step_size
+                end = start + self.window_size
+                if file_path in self.file_to_seizure:
+                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
+                    if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
+                        label = 1
+                    else:
+                        label = 0
+                    
+                else:
+                    label = 0
+                
+                if end > self.current_file_length:
+                    print("skip")
+                    continue
+                self.window_indices.append((file_idx, within_file_idx, label))
+
+        # label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
+        # label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
+        
+        # self.window_indices = label_0_indices + label_1_indices
+        # # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
+        # # # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
+        # # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
+        # # random.shuffle(self.balanced_window_indices)
+        # print("self.test_window_indices=",len(self.test_window_indices))
+
+
+    def __len__(self):
+        # return len(self.test_window_indices)
+        return len(self.window_indices)
+
+    
+    def __getitem__(self, idx):
+        # print("idx:", idx)
+        # file_idx, within_file_idx, label = self.balanced_window_indices[idx]
+        # self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(file_idx)
+        # file_idx, within_file_idx, label = self.test_window_indices[idx]
+        file_idx, within_file_idx, label = self.window_indices[idx]
+        # if self.edfFiles[file_idx] not in self.file_data:
+        #     self.load_file(file_idx)
+        #     print("load")
+        
+        start = within_file_idx * self.step_size
+        end = start + self.window_size
+        filepath = self.edfFiles[file_idx]
+        rel_filepath = os.path.relpath(filepath, start=self.standDir)
+        seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
+
+        # print("rel_filepath=",rel_filepath)
+        # seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
+        window_start_time_seconds = within_file_idx * self.step_size / self.sampling_rate
+        
+        file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d %H:%M:%S')
+        window_start_datetime = file_start_datetime + timedelta(seconds=window_start_time_seconds)
+        # print("window_start_datetime",window_start_datetime)
+        
+        additional_info = {
+        'subject': seizure_record['subject'].iloc[0] if not seizure_record.empty else None,
+        'session': seizure_record['session'].iloc[0] if not seizure_record.empty else None,
+        'recording': seizure_record['recording'].iloc[0] if not seizure_record.empty else None,
+        'dateTime': seizure_record['dateTime'].iloc[0] if not seizure_record.empty else None,
+        'duration': seizure_record['duration'].iloc[0] if not seizure_record.empty else None,
+        'event': seizure_record['event'].iloc[0] if not seizure_record.empty else None,
+        'startTime': window_start_datetime,
+        'endTime': end,
+        'confidence': seizure_record['confidence'].iloc[0] if not seizure_record.empty else None,
+        'channels': seizure_record['channels'].iloc[0] if not seizure_record.empty else None,
+        'filepath': rel_filepath,
+    }
+        # print("seizure_record",seizure_record)
+        # print("additional_info",additional_info)
+        # if end > len(self.current_data):
+        #     raise IndexError("Index out of range")
+        window = self.current_data[start:end].to_numpy()
+        window_tensor = torch.tensor(window, dtype=torch.float)
+        # window_tensor = window_tensor.transpose(0, 1)
+        # print("self.seizure_info_df",self.seizure_info_df)
+        # print("window_tensor=",window_tensor.shape,"file_idx=",file_idx)
+        # add a error report
+        # if(window_tensor.shape != torch.Size([18, 1024])):
+        #     print("error=",window_tensor)
+        IDs = within_file_idx
+        return window_tensor, torch.tensor(label, dtype=torch.long), additional_info, IDs 
+    def load_file(self, file_index):
+        # print("edfFiles=",self.edfFiles,"file_index=",file_index)
+        filepath = self.edfFiles[file_index]
+        print("filepath",filepath)
+        eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+        # print("eegDataDF=",eegDataDF)
+        return eegDataDF, samplFreq, fileStartTime
+    
+    
+    
+
+def collate_superv(data, max_len=None, task=None, oversample=False):
+    """Build mini-batch tensors from a list of (X, mask) tuples. Mask input. Create
+    Args:
+        data: len(batch_size) list of tuples (X, y).
+            - X: torch tensor of shape (seq_length, feat_dim); variable seq_length.
+            - y: torch tensor of shape (num_labels,) : class indices or numerical targets
+                (for classification or regression, respectively). num_labels > 1 for multi-task models
+        max_len: global fixed sequence length. Used for architectures requiring fixed length input,
+            where the batch length cannot vary dynamically. Longer sequences are clipped, shorter are padded with 0s
+    Returns:
+        X: (batch_size, padded_length, feat_dim) torch tensor of masked features (input)
+        targets: (batch_size, padded_length, feat_dim) torch tensor of unmasked features (output)
+        target_masks: (batch_size, padded_length, feat_dim) boolean torch tensor
+            0 indicates masked values to be predicted, 1 indicates unaffected/"active" feature values
+        padding_masks: (batch_size, padded_length) boolean tensor, 1 means keep vector at this position, 0 means padding
+    """
+
+    batch_size = len(data)
+    features, labels, _,IDs = zip(*data)
+
+    # Stack and pad features and masks (convert 2D to 3D tensors, i.e. add batch dimension)
+    lengths = [X.shape[0] for X in features]  # original sequence length for each time series
+    if max_len is None:
+        max_len = max(lengths)
+    X = torch.zeros(batch_size, max_len, features[0].shape[-1])  # (batch_size, padded_length, feat_dim)
+    for i in range(batch_size):
+        end = min(lengths[i], max_len)
+        X[i, :end, :] = features[i][:end, :]
+
+    targets = torch.stack(labels, dim=0)  # (batch_size, num_labels)
+
+    padding_masks = padding_mask(torch.tensor(lengths, dtype=torch.int16),
+                                 max_len=max_len)  # (batch_size, padded_length) boolean tensor, "1" means keep
+
+    if task == "classification" and oversample:
+        unique_labels, label_counts = np.unique(targets.numpy(), return_counts=True)
+        if len(unique_labels) > 1:
+            smallest_class_label = unique_labels[np.argmin(label_counts)]
+            largest_class_label = unique_labels[np.argmax(label_counts)]
+            #print("Smallest class label is {} with count {}".format(smallest_class_label, np.min(label_counts)))
+            #print("Largest class label is {} with count {}".format(largest_class_label, np.max(label_counts)))
+            replicate_factor = int(np.max(label_counts) / np.min(label_counts))
+            if replicate_factor > 1:
+                print("Oversampling small class")
+                smallest_class_train_indices = [idx for idx in range(len(targets)) if float(targets[idx]) == smallest_class_label]
+                #print("Initial count for smallest class is {}".format(len(smallest_class_train_indices)))
+                # Oversample the smallest class
+                smallest_class_X = np.tile(X.numpy()[smallest_class_train_indices], (replicate_factor, 1, 1))
+                #print("Oversampled count for smallest class is {}".format(len(smallest_class_X)))
+                # Augment the smallest class
+                my_augmenter = (Reverse()
+                                + Drift(max_drift=(0.1, 0.5)) @ 0.8)  # with 80% probability, random drift the signal up to 10% - 50%
+                smallest_class_X_aug = my_augmenter.augment(smallest_class_X)
+                #print("Augmented count for smallest class is {}".format(len(smallest_class_X_aug)))
+                X = torch.cat([X, torch.Tensor(smallest_class_X_aug)])
+                targets = torch.cat([targets, targets[smallest_class_train_indices].repeat((replicate_factor, 1))])
+                padding_masks = torch.cat([padding_masks, padding_masks[smallest_class_train_indices].repeat((replicate_factor, 1))])
+                IDs += tuple(np.arange(len(targets), len(targets) + len(smallest_class_X_aug)))
+                #print(X.shape, targets.shape, padding_masks.shape, len(IDs))
+    # print("size=",targets.shape)
+    return X, targets, padding_masks, IDs

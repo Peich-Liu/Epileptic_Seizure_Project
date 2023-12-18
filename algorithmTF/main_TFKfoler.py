@@ -188,7 +188,7 @@ for kIndx in range(GeneralParamsTF.GenCV_numFolds):
 
         optimizer = torch.optim.Adam(TF_model.parameters(), lr=1e-3)
         runner = AnomalyRunner(model=TF_model, dataloader=train_loader,device=device,loss_module=loss_module,feat_dim=1024,optimizer=optimizer)
-        # epoch_metrics = UnsupervisedRunner.train_epoch(10)
+        epoch_metrics = UnsupervisedRunner.train_epoch(10)
         metrics = []       
         tensorboard_writer = SummaryWriter(folder_path) 
         
@@ -196,18 +196,18 @@ for kIndx in range(GeneralParamsTF.GenCV_numFolds):
         #     epoch_metrics = runner.train_epoch(epoch_num=epoch,outputDir=folder_path)
         #     print(f"Epoch {epoch} metrics: {epoch_metrics}")
         # print(epoch_metrics['loss'])
-        TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_epoch_5.pth'))
+        TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_PN00_new/model_epoch_8.pth'))
+        # TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_PN00/model_epoch_8.pth'),map_location=torch.device('cpu'))
         test_evaluator = AnomalyRunner(TF_model, test_loader, device, loss_module, feat_dim, 
                                         output_dir='/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF')
         
-        aggr_metrics_val, best_metrics, best_value = validate(test_evaluator, tensorboard_writer, None,
+        aggr_metrics_val = validate(test_evaluator, tensorboard_writer, None,
                                                             epoch=6)
-        # # metrics_names, metrics_values = zip(*aggr_metrics_val.items())
-        # # metrics.append(list(metrics_values))
-        # aggr_metrics_val = validate(test_evaluator, tensorboard_writer, None,
-        #                                                     epoch=6)
-
-        
+        def save_metrics_to_csv_with_pandas(aggr_metrics, filename):
+            df = pd.DataFrame(list(aggr_metrics.items()), columns=['Metric', 'Value'])
+            df.to_csv(filename, index=False)
+        save_metrics_to_csv_with_pandas(aggr_metrics_val, 'validation_metrics.csv')
+        quit()
         
         # aggr_metrics_test, best_metrics, best_value = validate(test_evaluator, tensorboard_writer, config, best_metrics,
         #                                                         best_value, epoch=0)

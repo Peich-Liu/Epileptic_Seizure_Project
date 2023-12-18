@@ -1,4 +1,7 @@
 ''' file with all parameters'''
+import sys
+import os
+sys.path.append(r'../../Epileptic_Seizure_Project')
 import numpy as np
 import pickle
 # from sklearn.ensemble import RUSBoostClassifier
@@ -9,6 +12,7 @@ import os
 from VariousFunctionsLib import  *
 from datetime import timedelta, datetime
 import random
+from dldataset.datasetsdl import EEGDataForDL
 
 class GeneralParamsCNN:
     patients=[]  #on which subjects to train and test
@@ -138,12 +142,8 @@ class EEGDataset(Dataset):
             if os.path.exists(absolute_path):
                 self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
         self.filepaths = list(self.file_to_seizure.keys())
-        # print("self.filepaths=",self.filepaths)
-        # self.seizure_times = self.readSeizureTimes(labelFile)
         # unbalanced data modify
         self.window_indices = []
-        # self.calculate_window_indices()
-        # self.balance_data()
         
         for file_idx, file_path in enumerate(self.edfFiles):
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
@@ -168,11 +168,13 @@ class EEGDataset(Dataset):
         label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
+        # if len(label_0_indices) > 100000:
+        #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
         sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
+        print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
         self.balanced_window_indices = sampled_label_0_indices + label_1_indices
         random.shuffle(self.balanced_window_indices)
-        # print("self.balanced_window_indices=",self.balanced_window_indices)
+        print("self.balanced_window_indices=",len(self.balanced_window_indices))
 
 
     def __len__(self):
@@ -193,20 +195,11 @@ class EEGDataset(Dataset):
         window = self.current_data[start:end].to_numpy()
         window_tensor = torch.tensor(window, dtype=torch.float)
         window_tensor = window_tensor.transpose(0, 1)
-        # print("window_tensor=",window_tensor.shape,"file_idx=",file_idx)
+        # print("window_tensor=",window_tensor,"file_idx=",file_idx)
         # add a error report
         # if(window_tensor.shape != torch.Size([18, 1024])):
         #     print("error=",window_tensor)
         return window_tensor, torch.tensor(label, dtype=torch.long)      
-    
-    # def load_file(self, file_index):
-    #     filepath = self.edfFiles[file_index]
-    #     if filepath in self.file_data:
-    #         return self.file_data[filepath]  # 如果已加载，则返回存储的数据
-
-    #     eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
-    #     self.file_data[filepath] = (eegDataDF, samplFreq, fileStartTime)  # 存储数据以供后续使用
-    #     return eegDataDF, samplFreq, fileStartTime
     
     
     def load_file(self, file_index):
@@ -273,10 +266,10 @@ class EEGDatasetTest(Dataset):
                     continue
                 self.window_indices.append((file_idx, within_file_idx, label))
 
-        label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
-        label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
+        # label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
+        # label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
         
-        # self.test_window_indices = label_0_indices + label_1_indices
+        # self.window_indices = label_0_indices + label_1_indices
         # # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
         # # # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
         # # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
@@ -348,3 +341,7 @@ class EEGDatasetTest(Dataset):
         eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
         # print("eegDataDF=",eegDataDF)
         return eegDataDF, samplFreq, fileStartTime
+
+
+# class EEGtesttest(EEGDataForDL):
+    

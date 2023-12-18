@@ -13,8 +13,13 @@ from architecture import *
 from sklearn.metrics import precision_score, recall_score
 from trainer import *
 from sklearn.model_selection import KFold
+from pandas import *
+import csv
+from sklearn.metrics import roc_curve, roc_auc_score
+import matplotlib.pyplot as plt
+
 # # # #####################################################
-# # # SIENA DATASET
+# # # # SIENA DATASET
 # dataset='SIENA'
 # rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
 # rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
@@ -100,7 +105,7 @@ annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 # Create list of all subjects
 GeneralParamsCNN.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
 GeneralParamsCNN.patients.sort() #Sorting them
-# GeneralParams.patients=GeneralParams.patients[0:3]
+# GeneralParamsCNN.patients=GeneralParamsCNN.patients[5:]
 # dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParamsCNN.patients, None,DatasetPreprocessParamsCNN.channelNamesToKeep, TrueAnnotationsFile)
 # print("dataAllSubj=",dataAllSubj)
 print('TRAINING') # run leave-one-subject-out CV
@@ -111,13 +116,15 @@ patient_indices = {patient: idx for idx, patient in enumerate(GeneralParamsCNN.p
 NsubjPerK=int(np.ceil(len(GeneralParamsCNN.patients)/GeneralParamsCNN.GenCV_numFolds))
 for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
     patientsToTest=GeneralParamsCNN.patients[kIndx*NsubjPerK:(kIndx+1)*NsubjPerK]
-    print(GeneralParamsCNN.patients)
+    # patientsToTest=GeneralParamsCNN.patients[kIndx*NsubjPerK:(kIndx+1)*NsubjPerK]
+    # print(GeneralParamsCNN.patients)
     print('******')
     print(patientsToTest)
     print('-------')
     #PARAMETER SETUP
+
     n_classes = 2
-    batch_size = 256
+    batch_size = 32
     n_channel = len(DatasetPreprocessParamsCNN.channelNamesToKeep)
     # FOLDER SETUP
     folderDf = annotationsTrue[annotationsTrue['subject'].isin(patientsToTest)]
@@ -132,7 +139,7 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         trainFolders = [os.path.join(outDir, p) for p in trainPatients]
         trainLabels = folderDf[folderDf['subject'] != test_patient ]
         testFolder = [os.path.join(outDir, test_patient)]
-        testLabels = annotationsTrue[annotationsTrue['subject'] == test_patient]
+        testLabels = folderDf[folderDf['subject'] == test_patient ]
         # DATA SPILT
         # print("testFolder=",testFolder)
         # print("trainFolders=",trainFolders)
@@ -142,6 +149,8 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
         testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
         test_data_pred = []
+        info_path = 'info_' + test_patient + '.csv'
+        #### load data info
         for i in range(len(testSet)):
             _, label, additional_info = testSet[i]
             row = {
@@ -152,48 +161,58 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
             }
             test_data_pred.append(row)
         test_data_df = pd.DataFrame(test_data_pred)
+        test_data_df.to_csv(f'info_{test_patient}.csv',index=False)
+        # test_data_df = read_csv(info_path)
         print("test_data_df=",test_data_df)
         # test_data_df = None
-        train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True,collate_fn=custom_collate_fn)
-        # test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)
+        train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False,collate_fn=custom_collate_fn)
+    
+        # test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)    
+        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
         
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Using device:", device)
         # print("train_loader",train_loader)
         # print("testSet",testSet)
         all_data = []
         all_labels = []
-        # for data, labels in test_loader:
-        #     print("Data:", data)
-        #     print("Labels:", labels)
-        model = Net(n_channel,n_classes).to(device)
+        # model = Net(n_channel,n_classes).to(device)
+        model = Net(n_channel,n_classes)
+        
         for data, labels in train_loader:
-            data = data.to(device)
-            labels = labels.to(device)
+            # data = data.to(device)
+            # labels = labels.to(device)
             all_data.append(data)
             all_labels.append(labels)
             # print("data",data,";labels=",labels)
         X_train = torch.cat(all_data)
         y_train = torch.cat(all_labels)
+        # X_train.to(device)
+        # y_train.to(device)
         print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
         
         test_data = []
         test_labels = []
         test_labels_for_visual = []
         for data,labels,_ in test_loader:
+            # data = data.to(device)
+            # labels = labels.to(device)
             # data = batch[0]
             # labels = batch[1]
             test_data.append(data)
             test_labels.append(labels)
             test_labels_for_visual.extend(labels.numpy())
-            
+        # print("test_labels_for_visual",test_labels_for_visual)
+        # quit()
         # print("test_data567=",test_data)
         X_val = torch.cat(test_data)
         y_val = torch.cat(test_labels)
+        # X_val.to(device)
+        # y_val.to(device)
         print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
-        # # TRAINING
-
+        # # # ########################################## 
+        # # #TRAINING
         # Train_set_chb=(X_train,y_train)
         # val_dataset_chb=(X_val,y_val)
         # print("Train_set_chb=",Train_set_chb[0].shape)
@@ -202,12 +221,22 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         # learning_rate = 0.001
         # Trainer_chb.compile(learning_rate=learning_rate)
         # epochs = 20
-        # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_{}.pt'.format(test_patient))
+        # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_class1_{}.pt'.format(test_patient))
+        # filename = f'training_output_subject_{test_patient}.csv'
+        # with open(filename, 'w', newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(["Epoch Number", "Train Loss", "Val Loss"])
+
+        #     for epoch, (train_loss, val_loss) in enumerate(zip(Tracker['train_tracker'], Tracker['val_tracker'])):
+        #         writer.writerow([epoch, train_loss, val_loss])
+
+        # print(f"Training data saved to {filename}")
         # print(Tracker)        
-        # #EVALUATE NAIVE
-        (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
-        # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
-        
+#         # ########################################## 
+        # #EVALUATE
+        (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_class1_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+        print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
+        # print()
         # measure performance
         AllRes_test[patient_index, 0:9] = performance_sampleAndEventBased(predLabels_test, test_labels_for_visual, PerformanceParams)
         # test smoothing - movtest_patient=ng average
@@ -218,24 +247,24 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         AllRes_test[patient_index, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, test_labels_for_visual, PerformanceParams)
         outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
         saveDataToFile(AllRes_test, outputName, 'csv')
-
+        
+        # test_labels_for_visual.csv('cnn_label.csv')
         #visualize predictions
         outName=outPredictionsFolder + '/'+ test_patient+'_PredictionsInTime'
         plotPredictionsMatchingInTime(test_labels_for_visual, predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
 
         test_labels_for_visual = np.array(test_labels_for_visual)
-        test_labels_for_visual_reshaped = test_labels_for_visual.reshape(-1, 1)
-        
-        print("test_labels_for_visual",test_labels_for_visual)
+        # test_labels_for_visual_reshaped = test_labels_for_visual.reshape(-1, 1)
+        # print("test_labels_for_visual",test_labels_for_visual_reshaped)
         # predLabels = np.max(probabLab_test, axis=1)
         predLabels = probabLab_test[:,1]
         print("probabLab_test",predLabels)
         print("predLabels_test",predLabels_test)
         print("predLabels_MovAvrg",predLabels_MovAvrg)
-        # Saving predicitions in time
-        #############
-        #need modify#
-        #############
+        # # Saving predicitions in time
+        # #############
+        # #need modify#
+        # #############
         dataToSave = np.vstack((test_labels_for_visual, predLabels, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
         dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
         outputName = outPredictionsFolder + '/Subj' + test_patient + '_'+'CNN'+'_TestPredictions.csv'
@@ -245,6 +274,7 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         predlabels= np.vstack((predLabels, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
         testPredictionsDF=pd.concat([test_data_df, pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
         annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+        print(annotationsTrue)
         annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_MovAvrg')
         if (patIndx==0):
             annotationAllSubjPred=annotationAllPred
@@ -254,11 +284,11 @@ for kIndx in range(GeneralParamsCNN.GenCV_numFolds):
         PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
         annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
         
-#############################################################
+############################################################
 #EVALUATE PERFORMANCE  - Compare two annotation files
 print('EVALUATING PERFORMANCE')
 labelFreq=1/winParamsCNN.winStep
-TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
+TrueAnnotationsFile = outDir + '/' + dataset + 'CNNAnnotationsTrue.csv'
 PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
 # Calcualte performance per file by comparing true annotations file and the one created by ML training
 paramsPerformance = scoring.EventScoring.Parameters(
@@ -283,90 +313,36 @@ performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, ind
 # plot performance per subject
 plotPerformancePerSubj(GeneralParamsCNN.patients, performacePerSubj, outPredictionsFolder)
 
-
+print("GeneralParamsCNN.patients=",GeneralParamsCNN.patients)
 ### PLOT IN TIME
 for patIndx, pat in enumerate(GeneralParamsCNN.patients):
     print(pat)
-    InName = outPredictionsFolder + '/Subj' + pat + '_' + 'Cnn' + '_TestPredictions.csv.parquet.gzip'
+    InName = outPredictionsFolder + '/Subj' + pat + '_CNN_TestPredictions.csv.parquet.gzip'
     data= readDataFromFile(InName)
 
-    # visualize predictions
-    outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
-    plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+    # # visualize predictions
+    # outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime2'
+    # plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
 
+    y_true = data['TrueLabels'].values
+    y_scores = data['ProbabLabels'].values
 
+    # 计算 ROC 曲线
+    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
+    # 计算 AUC
+    auc = roc_auc_score(y_true, y_scores)
 
-
-
-
-
-
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-# #         # model = Net(n_channel,n_classes)
-# #         # model.load_state_dict(torch.load('temp.pt'))
-# #         # model.eval()
-# #         # all_predictions = []
-# #         # all_labels = []
-# #         # with torch.no_grad(): 
-# #         #     for data, labels in test_loader:
-# #         #         if torch.cuda.is_available():
-# #         #             data = data.cuda()
-# #         #             model = model.cuda()
-                    
-# #         #         predictions = model(data)
-                
-# #         #         _, predicted_classes = predictions.max(1)
-                
-# #         #         all_predictions.extend(predicted_classes.cpu().numpy())
-# #         #         all_labels.extend(labels.cpu().numpy())
-# #         # threshold = 0.5
-# #         # with torch.no_grad():
-# #         #     for data, labels in test_loader:
-# #         #         if torch.cuda.is_available():
-# #         #             data = data.cuda()
-# #         #             model = model.cuda()
-                    
-# #         #         outputs = model(data)
-# #         #         probabilities = torch.softmax(outputs, dim=1)[:, 1]  
-# #         #         predicted_classes = (probabilities > threshold).long()
-
-# #         #         all_predictions.extend(predicted_classes.cpu().numpy())
-# #         #         all_labels.extend(labels.cpu().numpy())
-
-# #         # accuracy = accuracy_score(all_labels, all_predictions)
-# #         # print(f'Accuracy: {accuracy}')
-# #         # precision = precision_score(all_labels, all_predictions)
-# #         # sensitivity = recall_score(all_labels, all_predictions)
-# #         # F1 = (2*precision*sensitivity) / (precision+sensitivity)
-
-# #         # print(f'Precision: {precision}')
-# #         # print(f'Sensitivity: {sensitivity}')
-# #         # print(f'F1:{F1}')
-# # #
+    # 绘制 ROC 曲线
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
+    # 保存图像到文件
+    plt.savefig(outName_ROC)  # 指定保存路径

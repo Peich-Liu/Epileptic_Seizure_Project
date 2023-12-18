@@ -65,41 +65,49 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
 
     refDf = pd.read_csv(refFilename, dtype={'session': 'object'})
     hypDf = pd.read_csv(hypFilename, dtype={'session': 'object'})
+    print("refDf",refDf)
+    print("hypDf",hypDf)
     if annotationsInTrainFilename!=[]:
         trainDf = pd.read_csv(annotationsInTrainFilename, dtype={'session': 'object'})
         refDf = pd.concat([refDf, trainDf])
         refDf.sort_values(by=['subject', 'session'])
         refDf=refDf.drop_duplicates(keep=False, inplace= False)
-    # print("refDF=",refDf)
     for filepath, _ in refDf.groupby(['filepath']):
     # for filepath_tuple, _ in refDf.groupby(['filepath']):
     #     filepath = filepath_tuple[0]
         # fs = 256
+        # print("filepath",filepath[0])
+        # print("refDf[refDf.filepath == filepath[0]].duration.iloc[0]",refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
         try:
-            filtered_df = refDf[refDf.filepath == filepath[0]]
-            print("Filtered DataFrame:", filtered_df)
-            print("filepath[0]=",filepath[0])
-            print("refDf.filepath=",refDf.filepath)
-            duration_value = filtered_df.duration.iloc[0]
-            print("Duration value:", duration_value)
-            res = round(duration_value * labelFreq)
-            print("res=",res)
-            nSamples = res
+            # print("refDf.filepath == filepath",refDf.filepath == filepath)
             nSamples = round(refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
-            print("nSample=",nSamples)
+            # filtered_df = refDf[refDf.filepath == filepath[0]]
+            # print("Filtered DataFrame:", filtered_df)
+            print("filepath[0]=",filepath[0])
+            # print("refDf.filepath=",refDf.filepath)
+            # duration_value = filtered_df.duration.iloc[0]
+            # print("Duration value:", duration_value)
+            # res = round(duration_value * labelFreq)
+            # print("res=",res)
+            # nSamples = res
+            # nSamples = round(refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
+            # print("nSample=",nSamples)
         except:
             print ('a')
             print(filepath)
-
+        print("nSample=",nSamples)
         # Convert annotations
-        ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath[0]]), labelFreq, nSamples)
-        hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath[0]]), labelFreq, nSamples)
-
+        ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath]), labelFreq, nSamples)
+        hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath]), labelFreq, nSamples)
+        # print("ref",ref)
+        # print("hyp",hyp)
         # Compute performance
         scoresEvent = scoring.EventScoring(ref, hyp, params)
         scoresSample = scoring.SampleScoring(ref, hyp)
+        print("scoresEvent",scoresEvent)
         print("scoresEvent.sensitivity",scoresEvent.sensitivity)
         print("scoresSample",scoresSample.sensitivity)
+        print("results['Sample_numEvents']",results['Sample_numEvents'])
         # Collect results
         for key in ['subject', 'session', 'recording', 'dateTime', 'duration', 'filepath']:
             results[key].append(refDf[refDf.filepath == filepath[0]][key].iloc[0])#123123123123123
@@ -321,9 +329,15 @@ def createAnnotationFileFromPredictions(data, annotationTrue, labelColumnName):
         else:
             for i, s in enumerate(startIndx):
                 try:
+                    start_time_str = fixInfo.loc[indxAnnotTrue[0], 'dateTime']
+                    # print("Trying to parse:", start_time_str) 
+                    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
                     startTime=dataThisFile.loc[startIndx[i],'Time']-datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0],'dateTime'],  "%Y-%m-%d %H:%M:%S")
                     endTime = dataThisFile.loc[endIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'],   "%Y-%m-%d %H:%M:%S")
                 except:
+                    start_time_str = fixInfo.loc[indxAnnotTrue[0], 'dateTime']
+                    # print("Trying to parse:", start_time_str)
+                    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
                     startTime = dataThisFile.loc[startIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'], "%Y-%m-%d")
                     endTime = dataThisFile.loc[endIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'], "%Y-%m-%d")
                 if (startTime.total_seconds()<0 or endTime.total_seconds()<0):

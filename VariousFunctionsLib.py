@@ -540,8 +540,9 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
     annotations_df = readDataFromFile(labelsFile)
     # print(annotations_df)
     filesList=annotations_df.filepath.to_list()
-
+        
     startIndxOfFiles=[]
+    # print("fileNames",fileNames)
     for f, fileName in enumerate(fileNames):
         # Create names to match files
         dir=os.path.dirname(fileName).split('/')[-1]
@@ -570,7 +571,6 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
 
         # Read data
         data_df = readDataFromFile(fileName)
-
         # Create labels for this file
         labels=np.zeros(data_df.shape[0])
         for i in indx:
@@ -730,7 +730,7 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
 
 
 #test program is here
-def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.8):
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.95):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 
@@ -754,7 +754,7 @@ def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold
     #PREDICT LABELS
     y_pred= model.predict(data)
     y_probability = model.predict_proba(data)
-    y_pred = (y_probability[:, 1] > custom_threshold).astype(int)
+    y_pred = (y_probability[:, 1] < custom_threshold).astype(int)
     # custom_threshold = 0.7 #new thershold for the RUSboost
 
     #pick only probability of predicted class
@@ -1375,131 +1375,8 @@ def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesPa
         # print("separate",folder_name)
         # np.save(os.path.join(folderOut,folder_name+'windows.npy'), all_windows_array)
     # return windows
-
-# def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesParams,dataNorm, outFormat ='parquet.gzip'):
-#     """
-#     Split continuous EEG data into overlapping windows.
-#     """
-#     edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-#     all_windows = []
-#     for edfFile in edfFiles:
-#         eegDataDF, samplFreq , fileStartTime= readEdfFile(edfFile)  # Load data
-#         print(edfFile)
-
-#         window_size_samples = int(FeaturesParams.winLen * samplFreq)
-#         step_size_samples = int(FeaturesParams.winStep * samplFreq)
-#         num_windows = (eegDataDF.shape[0] - window_size_samples) // step_size_samples + 1
-#         windows = np.zeros((num_windows, len(DatasetPreprocessParams.channelNamesToKeep_Unipolar), window_size_samples))
-#         for i in range(num_windows):
-#             start = i * step_size_samples
-#             end = start + window_size_samples
-#             # print("start,end=",start,end)
-#             windows[i] = eegDataDF.iloc[start:end].to_numpy().T
-#             all_windows.append(windows)
-#     print(len(all_windows))
-#         # break
-#     return windows
-def setLabelforCNN(labelsFile):
-    # edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-    # for edfFile in edfFiles:
-    #     eegDataDF, samplFreq , fileStartTime= readEdfFile(edfFile)  # Load data
-    #     # print(eegDataDF)
-    #     print(eegDataDF)
-    annotations_df = readDataFromFile(labelsFile)
-    print("annotations_df['startTime']=",annotations_df['startTime'][0])
-    # filesList=annotations_df.filepath.to_list()
-
-    # startIndxOfFiles=[]
-    # for f, fileName in enumerate(fileNames):
-    #     # Create names to match files
-    #     dir=os.path.dirname(fileName).split('/')[-1]
-    #     #remove extension
-    #     # fn=os.path.basename(fileName).split('.')[0]
-    #     if ('.parquet.gzip' in fileName):
-    #         fn=os.path.basename(fileName)[0:-13]
-    #     elif ('.gzip' in fileName):
-    #         fn=os.path.basename(fileName)[0:-5]
-    #     elif ('.csv' in fileName):
-    #         fn = os.path.basename(fileName)[0:-4]
-    #     if (dataset=='CHBMIT'):
-    #         fn1 = fn.split('-')[0]
-    #         filePathToSearch=dir+'/'+fn1+'.edf'
-    #     elif (dataset=='SIENA' or dataset=='siena' or dataset=='Siena'): #for siena dataset
-    #         fn1 = fn.split('-')[0]+'-'+fn.split('-')[1]
-    #         filePathToSearch=dir+'/'+fn1+'.edf'
-    #     elif (dataset=='SeizIT1'):
-    #         fn1 = fn.split('-')[0]
-    #         filePathToSearch = dir + '/' + fn1 + '.edf'
-    #     try:
-    #         # indx=np.array(filesList.index(filePathToSearch)).reshape((1,-1))
-    #         indx=annotations_df.index[annotations_df['filepath'] == filePathToSearch].tolist()
-    #     except:
-    #         print('a')
-
-    #     # Read data
-    #     data_df = readDataFromFile(fileName)
-
-    #     # Create labels for this file
-    #     labels=np.zeros(data_df.shape[0])
-    #     for i in indx:
-    #         # i=i.squeeze()
-    #         if ('sz' in annotations_df.event[i]):
-    #             try:
-    #                 t1 = datetime.timedelta(seconds=int(annotations_df.startTime[i])-1)+ datetime.datetime.strptime(annotations_df.dateTime[i],  "%Y-%m-%d %H:%M:%S")
-    #                 t2 = datetime.timedelta(seconds=int(annotations_df.endTime[i])-1) + datetime.datetime.strptime(annotations_df.dateTime[i],  "%Y-%m-%d %H:%M:%S")
-    #             except: #when there was no H,M and S in start of the file (e.g. in SeizIT)
-    #                 t1 = datetime.timedelta(seconds=int(annotations_df.startTime[i]) - 1) + datetime.datetime.strptime( annotations_df.dateTime[i], "%Y-%m-%d")
-    #                 t2 = datetime.timedelta(seconds=int(annotations_df.endTime[i]) - 1) + datetime.datetime.strptime(  annotations_df.dateTime[i], "%Y-%m-%d")
-    #             indxRangeNum=(data_df.Time>=t1).to_numpy()*1 + (data_df.Time>=t2).to_numpy()*1
-    #             indxsRange=np.where(indxRangeNum==1)#[0:-1]
-    #             labels[indxsRange]=1
-
-    #     #Concatenate all files
-    #     if (f==0):
-    #         dataOut=data_df
-    #         # startIndxOfFiles.append(data_df.shape[0])
-    #         labelsOut=labels
-    #         subjOut=[dir] * data_df.shape[0]
-    #         fileOut = [filePathToSearch] * data_df.shape[0]
-    #     else:
-    #         dataOut = pd.concat([dataOut, data_df])
-    #         # startIndxOfFiles.append(startIndxOfFiles[-1]+ data_df.shape[0])
-    #         labelsOut=np.concatenate((labelsOut, labels), axis=0)
-    #         subjOut = np.concatenate((subjOut, [dir] * data_df.shape[0]), axis=0)
-    #         fileOut = np.concatenate((fileOut, [filePathToSearch] * data_df.shape[0]), axis=0)
-
-    # #add Labels column to dataframe
-    # dataOut.insert(1,'Labels',labelsOut.astype(int))
-    # # add subject
-    # dataOut.insert(0, 'Subject', subjOut)
-    # dataOut.insert(1, 'FileName', fileOut)
-    # # print(dataOut[['Labels']])
-# def generateLabelData(window_start, window_end, seizure_start, seizure_end):
-#     label = generateLabel(window_start, window_end, seizure_start, seizure_end)
-# def generateLabel(self, window_start, window_end, seizure_start, seizure_end):
-#         # print("window_start=",window_start,"window_end",window_end,"seizure_start",seizure_start,"seizure_end",seizure_end)
-#         if seizure_start is None or seizure_end is None:
-#             return 0
-#         label = 1 if (seizure_start < window_end and seizure_end > window_start) else 0
-#         return label
-
-def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, threshold=0.5):
-    ''' 
-    Test a deep learning model and returns predictions, probabilities, and accuracies.
-
-    Args:
-        test_loader: DataLoader for test dataset.
-        model_path: Path to the trained model file.
-        n_channel: Number of channels in input data.
-        n_classes: Number of output classes.
-        threshold: Threshold for probability to decide class label.
-
-    Returns:
-        y_pred: Predicted labels.
-        y_probability_fin: Probability of the predicted labels.
-        acc: Overall accuracy of the model.
-        accPerClass: Accuracy per class.
-    '''
+    
+def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, threshold=0.8):
 
     # Load model
     model = Net(n_channel, n_classes)
@@ -1519,7 +1396,10 @@ def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, thresh
             outputs = model(data)
             probabilities = torch.softmax(outputs, dim=1)
             
-            predicted_classes = (probabilities[:, 1] > threshold).long()
+            predicted_classes = (probabilities[:, 1] > probabilities[:,0]).long()
+            # print("probabilities=",probabilities[:,0],probabilities[:,1])
+            # if probabilities[0]<probabilities[1]:
+            #     print("1111")
             all_predictions.extend(predicted_classes.cpu().numpy())
             all_probabilities.extend(probabilities.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
@@ -1545,13 +1425,11 @@ def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, thresh
 from torch.utils.data.dataloader import default_collate
 
 def custom_collate_fn(batch):
-    data_batch = [item[0] for item in batch]  # 收集所有数据
-    label_batch = [item[1] for item in batch]  # 收集所有标签
-    additional_info_batch = [item[2] for item in batch]  # 收集所有 additional_info
+    data_batch = [item[0] for item in batch]
+    label_batch = [item[1] for item in batch]
+    additional_info_batch = [item[2] for item in batch]
 
-    # 使用 default_collate 只对数据和标签进行整合
     data_batch = default_collate(data_batch)
     label_batch = default_collate(label_batch)
 
-    # 不对 additional_info_batch 进行整合，直接返回
     return data_batch, label_batch, additional_info_batch

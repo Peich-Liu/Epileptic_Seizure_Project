@@ -10,7 +10,7 @@ from collections import OrderedDict
 import time
 import pickle
 from functools import partial
-
+import pandas as pd
 import ipdb
 import torch
 from torch.utils.data import DataLoader
@@ -179,17 +179,18 @@ def evaluate(evaluator):
 
     eval_start_time = time.time()
     with torch.no_grad():
-        aggr_metrics, per_batch = evaluator.evaluate(epoch_num=None, keep_all=True)
+        # aggr_metrics, per_batch = evaluator.evaluate(epoch_num=None, keep_all=True)
+        aggr_metrics_val,predLabels_test, probabLab_test = evaluator.evaluate(epoch_num=None, keep_all=True)
     eval_runtime = time.time() - eval_start_time
     print()
     print_str = 'Evaluation Summary: '
-    for k, v in aggr_metrics.items():
+    for k, v in aggr_metrics_val.items():
         if v is not None:
             print_str += '{}: {:8f} | '.format(k, v)
     logger.info(print_str)
     logger.info("Evaluation runtime: {} hours, {} minutes, {} seconds\n".format(*utils.readable_time(eval_runtime)))
-
-    return aggr_metrics, per_batch
+    return aggr_metrics_val,predLabels_test, probabLab_test
+    # return aggr_metrics, per_batch
 
 
 # def validate(val_evaluator, tensorboard_writer, config, best_metrics, best_value, epoch):
@@ -199,26 +200,27 @@ def validate(val_evaluator, tensorboard_writer, config, epoch):
     logger.info("Evaluating on validation set ...")
     eval_start_time = time.time()
     with torch.no_grad():
-        aggr_metrics, per_batch = val_evaluator.evaluate(epoch, keep_all=True)
+        aggr_metrics_val,predLabels_test, probabLab_test = val_evaluator.evaluate(epoch, keep_all=True)
     eval_runtime = time.time() - eval_start_time
-    logger.info("Validation runtime: {} hours, {} minutes, {} seconds\n".format(*utils.readable_time(eval_runtime)))
+    return aggr_metrics_val,predLabels_test, probabLab_test#here
+    # logger.info("Validation runtime: {} hours, {} minutes, {} seconds\n".format(*utils.readable_time(eval_runtime)))
 
-    global val_times
-    val_times["total_time"] += eval_runtime
-    val_times["count"] += 1
-    avg_val_time = val_times["total_time"] / val_times["count"]
-    avg_val_batch_time = avg_val_time / len(val_evaluator.dataloader)
-    avg_val_sample_time = avg_val_time / len(val_evaluator.dataloader.dataset)
-    logger.info("Avg val. time: {} hours, {} minutes, {} seconds".format(*utils.readable_time(avg_val_time)))
-    logger.info("Avg batch val. time: {} seconds".format(avg_val_batch_time))
-    logger.info("Avg sample val. time: {} seconds".format(avg_val_sample_time))
+    # global val_times
+    # val_times["total_time"] += eval_runtime
+    # val_times["count"] += 1
+    # avg_val_time = val_times["total_time"] / val_times["count"]
+    # avg_val_batch_time = avg_val_time / len(val_evaluator.dataloader)
+    # avg_val_sample_time = avg_val_time / len(val_evaluator.dataloader.dataset)
+    # logger.info("Avg val. time: {} hours, {} minutes, {} seconds".format(*utils.readable_time(avg_val_time)))
+    # logger.info("Avg batch val. time: {} seconds".format(avg_val_batch_time))
+    # logger.info("Avg sample val. time: {} seconds".format(avg_val_sample_time))
 
-    print()
-    print_str = 'Epoch {} Validation Summary: '.format(epoch)
-    for k, v in aggr_metrics.items():
-        tensorboard_writer.add_scalar('{}/val'.format(k), v, epoch)
-        print_str += '{}: {:8f} | '.format(k, v)
-    logger.info(print_str)
+    # print()
+    # print_str = 'Epoch {} Validation Summary: '.format(epoch)
+    # for k, v in aggr_metrics.items():
+    #     tensorboard_writer.add_scalar('{}/val'.format(k), v, epoch)
+    #     print_str += '{}: {:8f} | '.format(k, v)
+    # logger.info(print_str)
 
     # if config['key_metric'] in NEG_METRICS:
     #     condition = (aggr_metrics[config['key_metric']] < best_value)
@@ -233,7 +235,8 @@ def validate(val_evaluator, tensorboard_writer, config, epoch):
     #     np.savez(pred_filepath, **per_batch)
 
     # return aggr_metrics, best_metrics, best_value
-    return aggr_metrics
+    # return aggr_metrics
+    # return aggr_metrics_val,predLabels_test, probabLab_test
 
 
 
@@ -426,7 +429,8 @@ class AnomalyRunner(BaseRunner):
             padding_masks = padding_masks.to(self.device)  # 0s: ignore
 
             predictions_attention = self.model(X.to(self.device),
-                                               padding_masks)  # (batch_size, padded_length, feat_dim + padded_length)
+                                            padding_masks)  # (batch_size, padded_length, feat_dim + padded_length)
+            # print(predictions_attention.shape)
             predictions = predictions_attention[:,:,:self.feat_dim]
 
             # Cascade noise masks (batch_size, padded_length, feat_dim) and padding masks (batch_size, padded_length)
@@ -488,15 +492,18 @@ class AnomalyRunner(BaseRunner):
             padding_masks = padding_masks.to(self.device)  # 0s: ignore
             # reconstructions: (batch_size, padded_length, feat_dim)
             # attention_weights: (batch_size, padded_length, padded_length)
+            # print("xshape=",X.shape,"padding_masks",padding_masks.shape)
             predictions_attention = self.model(X.to(self.device),
-                                               padding_masks)  # (batch_size, padded_length, feat_dim + padded_length)
+                                            padding_masks)  # (batch_size, padded_length, feat_dim + padded_length)
             reconstructions = predictions_attention[:, :, :self.feat_dim]
             attention_weights = predictions_attention[:, :, self.feat_dim:]
-
+            # print("predictions_attention=",predictions_attention.shape,"reconstructions=",reconstructions.shape,"attention_weights",attention_weights.shape)
             # MAKE PREDICTIONS BY Absolute Error
             # predictions, detect_channels = torch.max(torch.median(torch.abs(reconstructions.cpu() - X), 1)[0], 1)
             _, detect_channels = torch.max(torch.mean(torch.abs(reconstructions.cpu() - X), 1), 1)
             predictions = torch.mean(torch.mean(torch.abs(reconstructions.cpu() - X), 1), 1)
+            # print(predictions)
+            # print("predictions",predictions)
             # CANNOT CALCULATE MASKED LOSS AS VALIDATION IS SUPERVISED AND DOES NOT LOAD MASKS
             mean_loss = 0
 
@@ -535,12 +542,29 @@ class AnomalyRunner(BaseRunner):
 
         # calculate prediction performance
         predictions = torch.from_numpy(np.concatenate(per_batch['predictions'], axis=0))
-        probs = torch.nn.functional.sigmoid(
-            predictions)  # (total_samples, ) est. prob. for each class and sample
+        # probs = torch.nn.functional.sigmoid(
+        #     predictions)  # (total_samples, ) est. prob. for each class and sample
+        predictions_np = predictions.numpy()
+
+        min_val = np.min(predictions_np)
+        max_val = np.max(predictions_np)
+
+        normalized_predictions_np = (predictions_np - min_val) / (max_val - min_val)
+
+        probs = torch.from_numpy(normalized_predictions_np)
         probs = probs.cpu().numpy()
+        print("predictions123123",predictions,"probs",probs)
+
         # print("per_batch['targets']=",per_batch['targets'])
         targets = np.concatenate(per_batch['targets'], axis=0).flatten()
         print("targets=",targets.shape,"probs",probs.shape)
+        predictions_array = predictions.numpy()
+        df_tar = pd.DataFrame(targets,columns=['True'])
+        df_pre = pd.DataFrame(predictions_array, columns=['predictions'])
+        df_probs = pd.DataFrame(probs, columns=['probs'])
+        df_whole = pd.concat([df_pre, df_probs, df_tar], axis=1)
+        print("df_prob.shape", df_probs.shape)
+        df_whole.to_csv('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/temp1.csv')
         false_pos_rate, true_pos_rate, thresholds = sklearn.metrics.roc_curve(targets, probs)  # 1D scores needed
         self.epoch_metrics['AUROC'] = sklearn.metrics.auc(false_pos_rate, true_pos_rate)
         prec, rec, _ = sklearn.metrics.precision_recall_curve(targets, probs)
@@ -549,9 +573,12 @@ class AnomalyRunner(BaseRunner):
         # threshold by geometric mean
         gmeans = np.sqrt(true_pos_rate * (1 - false_pos_rate))
         ix = np.argmax(gmeans)
+        # f1_scores = 2 * (prec * rec) / (prec + rec)
+        # ix = np.argmax(f1_scores)
         print('Non-seizure vs. Seizure classification threshold=%f' % (thresholds[ix]))
-        predictions = np.array(probs > thresholds[ix])
-
+        # predictions = np.array(probs > thresholds[ix])
+        predictions = np.array(probs > 0.8)
+        # predictions = np.array(probs > 0.8)#123123
         class_names = ["Non-seizure", "Seizure"]
         metrics_dict = self.analyzer.analyze_classification(predictions, targets, class_names)
 
@@ -563,11 +590,15 @@ class AnomalyRunner(BaseRunner):
         # print("Plotting example windows")
         # analysis.plot_example_windows(X_array, attention_array, targets, probs, predictions, IDs_array, detect_channels_array,
         #                               self.output_dir, self.fs, self.mean.to_numpy(), self.std.to_numpy())
-
+        predLabels_test = predictions
+        probabLab_test = probs
+        print("evpredLabels_test",predLabels_test.shape)
+        print("evprobabLab_test",probabLab_test.shape)
         if keep_all:
-            return self.epoch_metrics, per_batch
+            return self.epoch_metrics, predLabels_test, probabLab_test
+            # return self.epoch_metrics, per_batch, predLabels_test, probabLab_test
         else:
-            return self.epoch_metrics
+            return self.epoch_metrics, predLabels_test, probabLab_test
 
 class SupervisedRunner(BaseRunner):
 

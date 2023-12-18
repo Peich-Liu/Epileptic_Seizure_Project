@@ -8,6 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 import os
 from VariousFunctionsLib import  *
 
+
 class GeneralParams:
     patients=[]  #on which subjects to train and test
     PersCV_MinTrainHours=5 #minimum number of hours we need to start training in personal model
@@ -17,6 +18,7 @@ class GeneralParams:
 ##############################################################################################
 #### PREPROCESSING PARAMETERS
 class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
+    dataset = 'SIENA'
     samplFreq = 256  # sampling frequency of data
     #Channels structure
     #Unipolar channels
@@ -24,6 +26,7 @@ class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
     refElectrode ='Cz' #default 'Cz' or 'Avrg', or any of channels listed above
     #Bipolar channels
     channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
+    
     # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T7', 'T7-P7', 'P7-O1', 'Fz-Cz', 'Cz-Pz',
     #                    'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T8', 'T8-P8', 'P8-O2') # TODO for old features
     # refElectrode='bipolar-dBanana' #if bipolar then ref electrode is not needed so put 'bipolar-dBanana'
@@ -31,6 +34,15 @@ class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
 
     # raw EEG data normalization
     eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization'
+    
+    def updateDatasetPreprocessParams(params):
+        DatasetPreprocessParams.channelNamesToKeep_Unipolar = params.get('Unipolar',DatasetPreprocessParams.channelNamesToKeep_Unipolar)
+        DatasetPreprocessParams.channelNamesToKeep_Bipolar = params.get('Bipolar',DatasetPreprocessParams.channelNamesToKeep_Bipolar)
+        DatasetPreprocessParams.refElectrode = params.get('refElectrode',DatasetPreprocessParams.refElectrode)
+        DatasetPreprocessParams.samplFreq = params.get('samplFreq',DatasetPreprocessParams.samplFreq)
+        DatasetPreprocessParams.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParams.eegDataNormalization)
+        DatasetPreprocessParams.dataset = params.get('dataset',DatasetPreprocessParams.dataset)
+        print("uni",DatasetPreprocessParams.channelNamesToKeep_Unipolar)
 
 ##############################################################################################
 #### FEATURES PARAMETERS
@@ -100,6 +112,13 @@ class FeaturesParams:
     ZC_thresh_type='rel' #'abs' or 'rel'
     ZC_thresh_arr_rel=[ 0.25, 0.50, 0.75, 1, 1.5]
     ZC_thresh_arr = [16, 32, 64, 128, 256]
+    
+    def updateFeaturesParams(params):
+        FeaturesParams.winLen = params.get('winLen',FeaturesParams.winLen)
+        FeaturesParams.winStep = params.get('winStep',FeaturesParams.winStep)
+        FeaturesParams.featNorm = params.get('featNorm',FeaturesParams.featNorm)
+        print("uni",DatasetPreprocessParams.channelNamesToKeep_Unipolar)
+        
 
 #compile list of all features
 FeaturesParams.allFeatNames=constructAllfeatNames(FeaturesParams )

@@ -83,67 +83,67 @@ class TransductionDataset(Dataset):
         return len(self.IDs)
 
 
-def collate_superv(data, max_len=None, task=None, oversample=False):
-    """Build mini-batch tensors from a list of (X, mask) tuples. Mask input. Create
-    Args:
-        data: len(batch_size) list of tuples (X, y).
-            - X: torch tensor of shape (seq_length, feat_dim); variable seq_length.
-            - y: torch tensor of shape (num_labels,) : class indices or numerical targets
-                (for classification or regression, respectively). num_labels > 1 for multi-task models
-        max_len: global fixed sequence length. Used for architectures requiring fixed length input,
-            where the batch length cannot vary dynamically. Longer sequences are clipped, shorter are padded with 0s
-    Returns:
-        X: (batch_size, padded_length, feat_dim) torch tensor of masked features (input)
-        targets: (batch_size, padded_length, feat_dim) torch tensor of unmasked features (output)
-        target_masks: (batch_size, padded_length, feat_dim) boolean torch tensor
-            0 indicates masked values to be predicted, 1 indicates unaffected/"active" feature values
-        padding_masks: (batch_size, padded_length) boolean tensor, 1 means keep vector at this position, 0 means padding
-    """
+# def collate_superv(data, max_len=None, task=None, oversample=False):
+#     """Build mini-batch tensors from a list of (X, mask) tuples. Mask input. Create
+#     Args:
+#         data: len(batch_size) list of tuples (X, y).
+#             - X: torch tensor of shape (seq_length, feat_dim); variable seq_length.
+#             - y: torch tensor of shape (num_labels,) : class indices or numerical targets
+#                 (for classification or regression, respectively). num_labels > 1 for multi-task models
+#         max_len: global fixed sequence length. Used for architectures requiring fixed length input,
+#             where the batch length cannot vary dynamically. Longer sequences are clipped, shorter are padded with 0s
+#     Returns:
+#         X: (batch_size, padded_length, feat_dim) torch tensor of masked features (input)
+#         targets: (batch_size, padded_length, feat_dim) torch tensor of unmasked features (output)
+#         target_masks: (batch_size, padded_length, feat_dim) boolean torch tensor
+#             0 indicates masked values to be predicted, 1 indicates unaffected/"active" feature values
+#         padding_masks: (batch_size, padded_length) boolean tensor, 1 means keep vector at this position, 0 means padding
+#     """
 
-    batch_size = len(data)
-    features, labels, IDs = zip(*data)
+#     batch_size = len(data)
+#     features, labels, IDs = zip(*data)
 
-    # Stack and pad features and masks (convert 2D to 3D tensors, i.e. add batch dimension)
-    lengths = [X.shape[0] for X in features]  # original sequence length for each time series
-    if max_len is None:
-        max_len = max(lengths)
-    X = torch.zeros(batch_size, max_len, features[0].shape[-1])  # (batch_size, padded_length, feat_dim)
-    for i in range(batch_size):
-        end = min(lengths[i], max_len)
-        X[i, :end, :] = features[i][:end, :]
+#     # Stack and pad features and masks (convert 2D to 3D tensors, i.e. add batch dimension)
+#     lengths = [X.shape[0] for X in features]  # original sequence length for each time series
+#     if max_len is None:
+#         max_len = max(lengths)
+#     X = torch.zeros(batch_size, max_len, features[0].shape[-1])  # (batch_size, padded_length, feat_dim)
+#     for i in range(batch_size):
+#         end = min(lengths[i], max_len)
+#         X[i, :end, :] = features[i][:end, :]
 
-    targets = torch.stack(labels, dim=0)  # (batch_size, num_labels)
+#     targets = torch.stack(labels, dim=0)  # (batch_size, num_labels)
 
-    padding_masks = padding_mask(torch.tensor(lengths, dtype=torch.int16),
-                                 max_len=max_len)  # (batch_size, padded_length) boolean tensor, "1" means keep
+#     padding_masks = padding_mask(torch.tensor(lengths, dtype=torch.int16),
+#                                  max_len=max_len)  # (batch_size, padded_length) boolean tensor, "1" means keep
 
-    if task == "classification" and oversample:
-        unique_labels, label_counts = np.unique(targets.numpy(), return_counts=True)
-        if len(unique_labels) > 1:
-            smallest_class_label = unique_labels[np.argmin(label_counts)]
-            largest_class_label = unique_labels[np.argmax(label_counts)]
-            #print("Smallest class label is {} with count {}".format(smallest_class_label, np.min(label_counts)))
-            #print("Largest class label is {} with count {}".format(largest_class_label, np.max(label_counts)))
-            replicate_factor = int(np.max(label_counts) / np.min(label_counts))
-            if replicate_factor > 1:
-                print("Oversampling small class")
-                smallest_class_train_indices = [idx for idx in range(len(targets)) if float(targets[idx]) == smallest_class_label]
-                #print("Initial count for smallest class is {}".format(len(smallest_class_train_indices)))
-                # Oversample the smallest class
-                smallest_class_X = np.tile(X.numpy()[smallest_class_train_indices], (replicate_factor, 1, 1))
-                #print("Oversampled count for smallest class is {}".format(len(smallest_class_X)))
-                # Augment the smallest class
-                my_augmenter = (Reverse()
-                                + Drift(max_drift=(0.1, 0.5)) @ 0.8)  # with 80% probability, random drift the signal up to 10% - 50%
-                smallest_class_X_aug = my_augmenter.augment(smallest_class_X)
-                #print("Augmented count for smallest class is {}".format(len(smallest_class_X_aug)))
-                X = torch.cat([X, torch.Tensor(smallest_class_X_aug)])
-                targets = torch.cat([targets, targets[smallest_class_train_indices].repeat((replicate_factor, 1))])
-                padding_masks = torch.cat([padding_masks, padding_masks[smallest_class_train_indices].repeat((replicate_factor, 1))])
-                IDs += tuple(np.arange(len(targets), len(targets) + len(smallest_class_X_aug)))
-                #print(X.shape, targets.shape, padding_masks.shape, len(IDs))
-    # print("size=",targets.shape)
-    return X, targets, padding_masks, IDs
+#     if task == "classification" and oversample:
+#         unique_labels, label_counts = np.unique(targets.numpy(), return_counts=True)
+#         if len(unique_labels) > 1:
+#             smallest_class_label = unique_labels[np.argmin(label_counts)]
+#             largest_class_label = unique_labels[np.argmax(label_counts)]
+#             #print("Smallest class label is {} with count {}".format(smallest_class_label, np.min(label_counts)))
+#             #print("Largest class label is {} with count {}".format(largest_class_label, np.max(label_counts)))
+#             replicate_factor = int(np.max(label_counts) / np.min(label_counts))
+#             if replicate_factor > 1:
+#                 print("Oversampling small class")
+#                 smallest_class_train_indices = [idx for idx in range(len(targets)) if float(targets[idx]) == smallest_class_label]
+#                 #print("Initial count for smallest class is {}".format(len(smallest_class_train_indices)))
+#                 # Oversample the smallest class
+#                 smallest_class_X = np.tile(X.numpy()[smallest_class_train_indices], (replicate_factor, 1, 1))
+#                 #print("Oversampled count for smallest class is {}".format(len(smallest_class_X)))
+#                 # Augment the smallest class
+#                 my_augmenter = (Reverse()
+#                                 + Drift(max_drift=(0.1, 0.5)) @ 0.8)  # with 80% probability, random drift the signal up to 10% - 50%
+#                 smallest_class_X_aug = my_augmenter.augment(smallest_class_X)
+#                 #print("Augmented count for smallest class is {}".format(len(smallest_class_X_aug)))
+#                 X = torch.cat([X, torch.Tensor(smallest_class_X_aug)])
+#                 targets = torch.cat([targets, targets[smallest_class_train_indices].repeat((replicate_factor, 1))])
+#                 padding_masks = torch.cat([padding_masks, padding_masks[smallest_class_train_indices].repeat((replicate_factor, 1))])
+#                 IDs += tuple(np.arange(len(targets), len(targets) + len(smallest_class_X_aug)))
+#                 #print(X.shape, targets.shape, padding_masks.shape, len(IDs))
+#     # print("size=",targets.shape)
+#     return X, targets, padding_masks, IDs
 
 
 class ClassiregressionDataset(Dataset):
@@ -216,45 +216,45 @@ def compensate_masking(X, mask):
     return X.shape[-1] * X / num_active
 
 
-def collate_unsuperv(data, max_len=None, mask_compensation=False, task=None, oversample=False):
-    """Build mini-batch tensors from a list of (X, mask) tuples. Mask input. Create
-    Args:
-        data: len(batch_size) list of tuples (X, mask).
-            - X: torch tensor of shape (seq_length, feat_dim); variable seq_length.
-            - mask: boolean torch tensor of shape (seq_length, feat_dim); variable seq_length.
-        max_len: global fixed sequence length. Used for architectures requiring fixed length input,
-            where the batch length cannot vary dynamically. Longer sequences are clipped, shorter are padded with 0s
-    Returns:
-        X: (batch_size, padded_length, feat_dim) torch tensor of masked features (input)
-        targets: (batch_size, padded_length, feat_dim) torch tensor of unmasked features (output)
-        target_masks: (batch_size, padded_length, feat_dim) boolean torch tensor
-            0 indicates masked values to be predicted, 1 indicates unaffected/"active" feature values
-        padding_masks: (batch_size, padded_length) boolean tensor, 1 means keep vector at this position, 0 ignore (padding)
-    """
+# def collate_unsuperv(data, max_len=None, mask_compensation=False, task=None, oversample=False):
+#     """Build mini-batch tensors from a list of (X, mask) tuples. Mask input. Create
+#     Args:
+#         data: len(batch_size) list of tuples (X, mask).
+#             - X: torch tensor of shape (seq_length, feat_dim); variable seq_length.
+#             - mask: boolean torch tensor of shape (seq_length, feat_dim); variable seq_length.
+#         max_len: global fixed sequence length. Used for architectures requiring fixed length input,
+#             where the batch length cannot vary dynamically. Longer sequences are clipped, shorter are padded with 0s
+#     Returns:
+#         X: (batch_size, padded_length, feat_dim) torch tensor of masked features (input)
+#         targets: (batch_size, padded_length, feat_dim) torch tensor of unmasked features (output)
+#         target_masks: (batch_size, padded_length, feat_dim) boolean torch tensor
+#             0 indicates masked values to be predicted, 1 indicates unaffected/"active" feature values
+#         padding_masks: (batch_size, padded_length) boolean tensor, 1 means keep vector at this position, 0 ignore (padding)
+#     """
 
-    batch_size = len(data)
-    features, masks, IDs = zip(*data)
+#     batch_size = len(data)
+#     features, masks, IDs = zip(*data)
 
-    # Stack and pad features and masks (convert 2D to 3D tensors, i.e. add batch dimension)
-    lengths = [X.shape[0] for X in features]  # original sequence length for each time series
-    if max_len is None:
-        max_len = max(lengths)
-    X = torch.zeros(batch_size, max_len, features[0].shape[-1])  # (batch_size, padded_length, feat_dim)
-    target_masks = torch.zeros_like(X,
-                                    dtype=torch.bool)  # (batch_size, padded_length, feat_dim) masks related to objective
-    for i in range(batch_size):
-        end = min(lengths[i], max_len)
-        X[i, :end, :] = features[i][:end, :]
-        target_masks[i, :end, :] = masks[i][:end, :]
+#     # Stack and pad features and masks (convert 2D to 3D tensors, i.e. add batch dimension)
+#     lengths = [X.shape[0] for X in features]  # original sequence length for each time series
+#     if max_len is None:
+#         max_len = max(lengths)
+#     X = torch.zeros(batch_size, max_len, features[0].shape[-1])  # (batch_size, padded_length, feat_dim)
+#     target_masks = torch.zeros_like(X,
+#                                     dtype=torch.bool)  # (batch_size, padded_length, feat_dim) masks related to objective
+#     for i in range(batch_size):
+#         end = min(lengths[i], max_len)
+#         X[i, :end, :] = features[i][:end, :]
+#         target_masks[i, :end, :] = masks[i][:end, :]
 
-    targets = X.clone()
-    X = X * target_masks  # mask input
-    if mask_compensation:
-        X = compensate_masking(X, target_masks)
+#     targets = X.clone()
+#     X = X * target_masks  # mask input
+#     if mask_compensation:
+#         X = compensate_masking(X, target_masks)
 
-    padding_masks = padding_mask(torch.tensor(lengths, dtype=torch.int16), max_len=max_len)  # (batch_size, padded_length) boolean tensor, "1" means keep
-    target_masks = ~target_masks  # inverse logic: 0 now means ignore, 1 means predict
-    return X, targets, target_masks, padding_masks, IDs
+#     padding_masks = padding_mask(torch.tensor(lengths, dtype=torch.int16), max_len=max_len)  # (batch_size, padded_length) boolean tensor, "1" means keep
+#     target_masks = ~target_masks  # inverse logic: 0 now means ignore, 1 means predict
+#     return X, targets, target_masks, padding_masks, IDs
 
 
 def noise_mask(X, masking_ratio, lm=3, mode='separate', distribution='geometric', exclude_feats=None):
