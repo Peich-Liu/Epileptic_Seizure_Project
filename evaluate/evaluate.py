@@ -76,14 +76,14 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
     # for filepath_tuple, _ in refDf.groupby(['filepath']):
     #     filepath = filepath_tuple[0]
         # fs = 256
-        # print("filepath",filepath[0])
+        # print("filepath7890",filepath[0])
         # print("refDf[refDf.filepath == filepath[0]].duration.iloc[0]",refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
         try:
-            # print("refDf.filepath == filepath",refDf.filepath == filepath)
+            # print("refDf.filepath == filepath",refDf.filepath == filepath[0])
             nSamples = round(refDf[refDf.filepath == filepath[0]].duration.iloc[0] * labelFreq)
-            # filtered_df = refDf[refDf.filepath == filepath[0]]
+            filtered_df = refDf[refDf.filepath == filepath[0]]
             # print("Filtered DataFrame:", filtered_df)
-            print("filepath[0]=",filepath[0])
+            # print("filepath[0]=",filepath[0])
             # print("refDf.filepath=",refDf.filepath)
             # duration_value = filtered_df.duration.iloc[0]
             # print("Duration value:", duration_value)
@@ -97,14 +97,14 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
             print(filepath)
         print("nSample=",nSamples)
         # Convert annotations
-        ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath]), labelFreq, nSamples)
-        hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath]), labelFreq, nSamples)
+        ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath[0]]), labelFreq, nSamples)
+        hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath[0]]), labelFreq, nSamples)
         # print("ref",ref)
         # print("hyp",hyp)
         # Compute performance
         scoresEvent = scoring.EventScoring(ref, hyp, params)
         scoresSample = scoring.SampleScoring(ref, hyp)
-        print("scoresEvent",scoresEvent)
+        print("scoresEvent.refTrue",scoresEvent.refTrue)
         print("scoresEvent.sensitivity",scoresEvent.sensitivity)
         print("scoresSample",scoresSample.sensitivity)
         print("results['Sample_numEvents']",results['Sample_numEvents'])
@@ -148,6 +148,7 @@ def setScoresToNan(scoresEvent, scoresSample):
     return (scoresEvent, scoresSample)
 
 # def  recalculatePerfPerSubject(performancePerFile, subjects, labelFreq):
+#1218test
 def recalculatePerfPerSubject(performancePerFileName, subjects, labelFreq, params):
     ''' Uses output from evaluate2AnnotationFiles which contains performance per each file of the dataset,
     and calculated performance per subject.

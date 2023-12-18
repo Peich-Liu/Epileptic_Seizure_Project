@@ -1,7 +1,7 @@
 algorithm: RusBoost
 
-dataset: CHBMIT
-trainType: personal #Kfolder, general, personal for this algorithm
+dataset: SIENA
+trainType: general #Kfolder, general, personal for this algorithm
 
 
 GeneralParams:
