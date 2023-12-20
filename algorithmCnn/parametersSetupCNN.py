@@ -23,6 +23,7 @@ class GeneralParamsCNN:
 ##############################################################################################
 #### PREPROCESSING PARAMETERS
 class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
+    dataset = 'SIENA'
     samplFreq = 256  # sampling frequency of data
     #Channels structure
     #Unipolar channels
@@ -39,6 +40,14 @@ class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
 
     # raw EEG data normalization
     eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization'
+    def updateDatasetPreprocessParams(params):
+        DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar = params.get('Unipolar',DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar)
+        DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar = params.get('Bipolar',DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar)
+        DatasetPreprocessParamsCNN.refElectrode = params.get('refElectrode',DatasetPreprocessParamsCNN.refElectrode)
+        DatasetPreprocessParamsCNN.samplFreq = params.get('samplFreq',DatasetPreprocessParamsCNN.samplFreq)
+        DatasetPreprocessParamsCNN.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParamsCNN.eegDataNormalization)
+        DatasetPreprocessParamsCNN.dataset = params.get('dataset',DatasetPreprocessParamsCNN.dataset)
+        print("uni",DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar)
 
 ##############################################################################################
 #### FEATURES PARAMETERS
@@ -47,10 +56,13 @@ class winParamsCNN:
     #window size and step in which window is moved
     winLen= 4 #in seconds, window length on which to calculate features
     winStep= 1 #in seconds, step of moving window length
-
+    winStepTest = winLen
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
-
+    def updateWinParamsCNN(params):
+        winParamsCNN.winLen = params.get('winLen',winParamsCNN.winLen)
+        winParamsCNN.winStep = params.get('winStep',winParamsCNN.winStep)
+        winParamsCNN.featNorm = params.get('featNorm',winParamsCNN.featNorm)
 ##############################################################################################
 #### PERFORMANCE METRICS PARAMETERS
 
@@ -82,7 +94,7 @@ class StandardParamsCNN:
     #window size and step in which window is moved
     winLen= 4 #in seconds, window length on which to calculate features
     winStep= 1 #in seconds, step of moving window length
-
+    
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
 
@@ -91,19 +103,7 @@ class StandardParamsCNN:
     # featSetNames = np.array( ['MeanAmpl', 'LineLength', 'Frequency', 'ZeroCross'])
     featNames = np.array([])
     allFeatName = '-'.join(featSetNames)
-
-    # #individual features within each set of features
-    # indivFeatNames_MeanAmpl=['meanAmpl']
-    # indivFeatNames_LL=['lineLenth']
-    # indivFeatNames_Freq = ['p_dc_rel', 'p_mov_rel', 'p_delta_rel', 'p_theta_rel', 'p_alfa_rel', 'p_middle_rel', 'p_beta_rel', 'p_gamma_rel', 'p_dc', 'p_mov', 'p_delta', 'p_theta', 'p_alfa', 'p_middle', 'p_beta', 'p_gamma', 'p_tot']
-    # indivFeatNames_SD = ['StandardDeviation']
-    # indivFeatNames_DMe = ['DMe']
-    # indivFeatNames_Skew = ['SKewnesss']
-    # indivFeatNames_SO = ['SecondOrder']
-    # indivFeatNames_KatzFD = ['KatzFD']
-    # indivFeatNames_NW = ['MeanDeg','MeanBetw','MeanClose']
-
-
+    
     #ZC features params
     ZC_thresh_type='rel' #'abs' or 'rel'
     ZC_thresh_arr_rel=[ 0.25, 0.50, 0.75, 1, 1.5]
@@ -301,8 +301,11 @@ class EEGDatasetTest(Dataset):
         # print("rel_filepath=",rel_filepath)
         # seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
         window_start_time_seconds = within_file_idx * self.step_size / self.sampling_rate
-        
-        file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d %H:%M:%S')
+        try:
+            file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d %H:%M:%S')
+        except:
+            file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d')
+            
         window_start_datetime = file_start_datetime + timedelta(seconds=window_start_time_seconds)
         # print("window_start_datetime",window_start_datetime)
         

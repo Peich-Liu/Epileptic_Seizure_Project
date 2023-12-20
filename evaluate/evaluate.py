@@ -338,7 +338,7 @@ def createAnnotationFileFromPredictions(data, annotationTrue, labelColumnName):
                 except:
                     start_time_str = fixInfo.loc[indxAnnotTrue[0], 'dateTime']
                     # print("Trying to parse:", start_time_str)
-                    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+                    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d")
                     startTime = dataThisFile.loc[startIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'], "%Y-%m-%d")
                     endTime = dataThisFile.loc[endIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'], "%Y-%m-%d")
                 if (startTime.total_seconds()<0 or endTime.total_seconds()<0):

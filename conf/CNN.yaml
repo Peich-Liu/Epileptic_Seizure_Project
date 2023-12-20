@@ -1,6 +1,7 @@
-algorithm: RusBoost
-dataset: CHBMIT #CHBMIT, SeizIT1, SIENA could be selected
-trainType: Kfolder #Kfolder, general, personal for this algorithm
+algorithm: CNN
+
+dataset: SeizIT1 #CHBMIT, SeizIT1, SIENA could be selected
+trainType: Kfolder #This algorithm only has Kfolder train
 
 
 GeneralParams:
@@ -9,8 +10,8 @@ GeneralParams:
   GenCV_numFolds: 5
 FeaturesParams:
   #window size and step in which window is moved
-  winLen: 0.391 #in seconds, window length on which to calculate features
-  winStep: 0.391 #in seconds, step of moving window length
+  winLen: 4 #in seconds, window length on which to calculate features
+  winStep: 1 #in seconds, step of moving window length
 
   #normalization of feature values or not
   featNorm: 'Norm' #'', 'Norm&Discr', 'Norm'

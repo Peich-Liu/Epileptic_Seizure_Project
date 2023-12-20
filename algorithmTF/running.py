@@ -16,7 +16,7 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 import sklearn
-
+from parametersSetupTF import DatasetPreprocessParamsTF
 from utils import utils, analysis
 from models.loss import l2_reg_loss
 from datasets.dataset import ImputationDataset, TransductionDataset, ClassiregressionDataset, collate_unsuperv, collate_superv
@@ -465,13 +465,14 @@ class AnomalyRunner(BaseRunner):
         self.epoch_metrics['epoch'] = epoch_num
         self.epoch_metrics['loss'] = epoch_loss
         file_path = os.path.join(outputDir, 'model_epoch_{}.pth'.format(epoch_num))
+        checkpoint_filename = f"{DatasetPreprocessParamsTF.dataset}_checkpoint_epoch_{epoch_num}.pth"
         torch.save(self.model.state_dict(), file_path.format(epoch_num))
         torch.save({
             'epoch': epoch_num,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'loss': epoch_loss,
-        }, 'checkpoint_epoch_{}.pth'.format(epoch_num))
+        }, checkpoint_filename)#here is the checkpoint
         return self.epoch_metrics
 
     def evaluate(self, epoch_num=None, keep_all=True):
@@ -576,8 +577,8 @@ class AnomalyRunner(BaseRunner):
         # f1_scores = 2 * (prec * rec) / (prec + rec)
         # ix = np.argmax(f1_scores)
         print('Non-seizure vs. Seizure classification threshold=%f' % (thresholds[ix]))
-        # predictions = np.array(probs > thresholds[ix])
-        predictions = np.array(probs > 0.8)
+        predictions = np.array(probs > thresholds[ix])
+        # predictions = np.array(probs > 0.8)
         # predictions = np.array(probs > 0.8)#123123
         class_names = ["Non-seizure", "Seizure"]
         metrics_dict = self.analyzer.analyze_classification(predictions, targets, class_names)

@@ -20,6 +20,7 @@ class GeneralParamsTF:
 ##############################################################################################
 #### PREPROCESSING PARAMETERS
 class DatasetPreprocessParamsTF: # mostly based on CHB-MIT dataset
+    dataset = 'CHBMIT'
     samplFreq = 256  # sampling frequency of data
     #Channels structure
     #Unipolar channels

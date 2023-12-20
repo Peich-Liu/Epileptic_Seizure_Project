@@ -585,7 +585,7 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
                 indxRangeNum=(data_df.Time>=t1).to_numpy()*1 + (data_df.Time>=t2).to_numpy()*1
                 indxsRange=np.where(indxRangeNum==1)#[0:-1]
                 labels[indxsRange]=1
-
+        print("123",f)
         #Concatenate all files
         if (f==0):
             dataOut=data_df
@@ -599,7 +599,7 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
             labelsOut=np.concatenate((labelsOut, labels), axis=0)
             subjOut = np.concatenate((subjOut, [dir] * data_df.shape[0]), axis=0)
             fileOut = np.concatenate((fileOut, [filePathToSearch] * data_df.shape[0]), axis=0)
-    # print(dataOut)
+    print("789",dataOut)
     #add Labels column to dataframe
     dataOut.insert(1,'Labels',labelsOut.astype(int))
     # add subject
@@ -1396,7 +1396,8 @@ def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, thresh
             outputs = model(data)
             probabilities = torch.softmax(outputs, dim=1)
             
-            predicted_classes = (probabilities[:, 1] > probabilities[:,0]).long()
+            # predicted_classes = (probabilities[:, 1] > probabilities[:,0]).long()
+            predicted_classes = (probabilities[:, 1] > 0.5).long()
             # print("probabilities=",probabilities[:,0],probabilities[:,1])
             # if probabilities[0]<probabilities[1]:
             #     print("1111")

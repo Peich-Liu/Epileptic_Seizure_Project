@@ -22,7 +22,7 @@ def trainRusKfolder():
         # SEIZIT DATASET
         rootDir=  '../../../../../databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from putty
         rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
-        DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+        DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
     elif dataset == 'CHBMIT':
         # CHBMIT DATASET
         rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
@@ -113,9 +113,13 @@ def trainRusKfolder():
     # Create list of all subjects
     GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParams.patients.sort() #Sorting them
-    # # GeneralParams.patients=GeneralParams.patients[11:13]
+    GeneralParams.patients=GeneralParams.patients[0:5]
     print("outDirFeatures",outDirFeatures)
     print("featNames",FeaturesParams.featNames)
+    print("dataset",dataset)
+    print("TrueAnnotationsFile",TrueAnnotationsFile)
+    print("GeneralParams.patients",GeneralParams.patients)
+    print("DatasetPreprocessParams.channelNamesToKeep",DatasetPreprocessParams.channelNamesToKeep)
     dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
     print(dataAllSubj)
 
