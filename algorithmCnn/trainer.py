@@ -89,19 +89,19 @@ class trainer:
                 for data, target in valloader:
                     
                     if torch.cuda.is_available():
-
+                        self.Model.eval()
                         pred = self.Model(data.float().cuda())
                         val_loss = self.loss_func(pred, target.cuda())
                         batch_val_loss.append(val_loss)
                     
                     else:
-                        
+                        self.Model.eval()
                         pred = self.Model(data.float())
                         val_loss = self.loss_func(pred, target)
                         batch_val_loss.append(val_loss)
 
             final_val_loss = torch.mean(torch.tensor(batch_val_loss))    
-
+            
             print("Epoch Number \t: ",e)
             print("Train Loss \t:","{:.5f}".format(final_train_loss))
             print("Val Loss \t:","{:.5f}".format(final_val_loss))

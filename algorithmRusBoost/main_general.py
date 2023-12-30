@@ -21,7 +21,7 @@ def trainRusGeneral():
         # SEIZIT DATASET
         rootDir=  '../../../../../databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from putty
         rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
-        DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Unipolar
+        DatasetPreprocessParams.channelNamesToKeep=DatasetPreprocessParams.channelNamesToKeep_Bipolar
     elif dataset == 'CHBMIT':
         # CHBMIT DATASET
         rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
@@ -90,11 +90,11 @@ def trainRusGeneral():
     # annotationsTrue=pd.read_csv(TrueAnnotationsFile)
     annotationsTrue= checkIfRawDataExists(annotationsTrue, outDir)
     annotationsTrue.to_csv(TrueAnnotationsFile, index=False)
-    TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrueTemp.csv'#123123
+    TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'#123123
     annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
     #load annotations - if we are not extracting them above
-    TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrueTemp.csv'
+    TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
     annotationsTrue=pd.read_csv(TrueAnnotationsFile)
     print(annotationsTrue)
     # #####################################################
@@ -115,92 +115,117 @@ def trainRusGeneral():
     # Create list of all subjects
     GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParams.patients.sort() #Sorting them
-    GeneralParams.patients=GeneralParams.patients[0:5]
+    GeneralParams.patients=GeneralParams.patients[0:2]
     print("GeneralParams.patients",GeneralParams.patients)
     dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-    quit()
-    #################################
-    print('TRAINING') # run leave-one-subject-out CV
     NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
-    AllRes_test=np.zeros((len(GeneralParams.patients),27))
-    for patIndx, pat in enumerate(GeneralParams.patients):
-        print(pat)
+    # #################################
+    # print('TRAINING') # run leave-one-subject-out CV
+    # NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
+    # AllRes_test=np.zeros((len(GeneralParams.patients),27))
+    # for patIndx, pat in enumerate(GeneralParams.patients):
+    #     print(pat)
+    #     testData= dataAllSubj[dataAllSubj['Subject'] == pat]
+    #     trainData = dataAllSubj[dataAllSubj['Subject'] != pat]
+    #     testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
+    #     trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
+    #     # testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
+    #     # trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
+    #     #normalize data
+    #     trainDataFeatures = trainDataFeatures.loc[:,~trainDataFeatures.columns.duplicated()]
+    #     testDataFeatures = testDataFeatures.loc[:,~testDataFeatures.columns.duplicated()]
+    #     if (FeaturesParams.featNorm == 'Norm'):
+    #         # testDataFeatures= normalizeData(testDataFeatures)
+    #         # trainDataFeatures = normalizeData(trainDataFeatures)
+    #         (trainDataFeatures, testDataFeatures) = normalizeTrainAndTestData(trainDataFeatures, testDataFeatures)
+    #         trainDataFeatures=removeExtremeValues(trainDataFeatures)
+    #         testDataFeatures=removeExtremeValues(testDataFeatures)
+    #         #remove useless feature columns
+    #         colsToDrop=[]
+    #         colsToDrop=removeFeaturesIfExtreme(trainDataFeatures, colsToDrop)
+    #         colsToDrop=removeFeaturesIfExtreme(testDataFeatures, colsToDrop)
+    #         colsToDrop=list(set(colsToDrop))
+    #         trainDataFeatures=trainDataFeatures.drop(labels=colsToDrop, axis='columns')
+    #         testDataFeatures=testDataFeatures.drop(labels=colsToDrop, axis='columns')
+
+    #     ## STANDARD ML LEARNING
+    #     if (StandardMLParams.trainingDataResampling != 'NoResampling'):
+    #         (Xtrain, ytrain) = datasetResample(trainDataFeatures.to_numpy(), trainData['Labels'].to_numpy(),
+    #                                         StandardMLParams.trainingDataResampling,
+    #                                         StandardMLParams.traininDataResamplingRatio, randState=42)
+    #     else:
+    #         Xtrain = trainDataFeatures.to_numpy()
+    #         ytrain = trainData['Labels'].to_numpy()
+    #     MLstdModel = train_StandardML_moreModelsPossible(Xtrain, ytrain, StandardMLParams)
+    #     # MLstdModel = train_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(), StandardMLParams)
+    #     # testing
+    #     (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(),MLstdModel)
+
+    #     # measure performance
+    #     AllRes_test[patIndx, 0:9] = performance_sampleAndEventBased(predLabels_test, testData['Labels'].to_numpy(), PerformanceParams)
+    #     # test smoothing - moving average
+    #     predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
+    #     AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testData['Labels'].to_numpy(), PerformanceParams)
+    #     # test smoothing - moving average
+    #     predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
+    #     AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testData['Labels'].to_numpy(), PerformanceParams)
+    #     outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
+    #     saveDataToFile(AllRes_test, outputName, 'csv')
+
+    #     #visualize predictions
+    #     outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
+    #     plotPredictionsMatchingInTime(testData['Labels'].to_numpy(), predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
+
+
+    #     # Saving predicitions in time
+    #     dataToSave = np.vstack((testData['Labels'].to_numpy(), probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
+    #     dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
+    #     outputName = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
+    #     saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
+
+    #     #####################################
+    #     # CREATE ANNOTATION FILE DIRECTLY
+    #     predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
+    #     testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+    #     annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+    #     annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_MovAvrg')
+    #     if (patIndx==0):
+    #         annotationAllSubjPred=annotationAllPred
+    #     else:
+    #         annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
+    #     #save every time, just for backup
+    #     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+    #     annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
+    #############################################################
+    #EVALUATE PERFORMANCE  - Compare two annotation files
+    ####################################
+    ###use existing result to evaluate the box figure
+    # result = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
+    # temp
+    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/good_SIENA_performancenew0.8_Transformer_TrainingResults/01_Transformer_WinStep[4,1]'
+    for patIndx, pat in enumerate(GeneralParams.patients):   
+        result_file = outPredictionsFolder + '/Subj' + pat + '_'+'Transformer'+'_TestPredictions.csv.parquet.gzip'
         testData= dataAllSubj[dataAllSubj['Subject'] == pat]
-        trainData = dataAllSubj[dataAllSubj['Subject'] != pat]
-        testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
-        trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
-        # testDataFeatures= testData.loc[:, ~testData.columns.isin(NonFeatureColumns)]
-        # trainDataFeatures = trainData.loc[:, ~trainData.columns.isin(NonFeatureColumns)]
-        #normalize data
-        trainDataFeatures = trainDataFeatures.loc[:,~trainDataFeatures.columns.duplicated()]
-        testDataFeatures = testDataFeatures.loc[:,~testDataFeatures.columns.duplicated()]
-        if (FeaturesParams.featNorm == 'Norm'):
-            # testDataFeatures= normalizeData(testDataFeatures)
-            # trainDataFeatures = normalizeData(trainDataFeatures)
-            (trainDataFeatures, testDataFeatures) = normalizeTrainAndTestData(trainDataFeatures, testDataFeatures)
-            trainDataFeatures=removeExtremeValues(trainDataFeatures)
-            testDataFeatures=removeExtremeValues(testDataFeatures)
-            #remove useless feature columns
-            colsToDrop=[]
-            colsToDrop=removeFeaturesIfExtreme(trainDataFeatures, colsToDrop)
-            colsToDrop=removeFeaturesIfExtreme(testDataFeatures, colsToDrop)
-            colsToDrop=list(set(colsToDrop))
-            trainDataFeatures=trainDataFeatures.drop(labels=colsToDrop, axis='columns')
-            testDataFeatures=testDataFeatures.drop(labels=colsToDrop, axis='columns')
-
-        ## STANDARD ML LEARNING
-        if (StandardMLParams.trainingDataResampling != 'NoResampling'):
-            (Xtrain, ytrain) = datasetResample(trainDataFeatures.to_numpy(), trainData['Labels'].to_numpy(),
-                                            StandardMLParams.trainingDataResampling,
-                                            StandardMLParams.traininDataResamplingRatio, randState=42)
-        else:
-            Xtrain = trainDataFeatures.to_numpy()
-            ytrain = trainData['Labels'].to_numpy()
-        MLstdModel = train_StandardML_moreModelsPossible(Xtrain, ytrain, StandardMLParams)
-        # MLstdModel = train_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(), StandardMLParams)
-        # testing
-        (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_StandardML_moreModelsPossible(testDataFeatures.to_numpy(), testData['Labels'].to_numpy(),MLstdModel)
-
-        # measure performance
-        AllRes_test[patIndx, 0:9] = performance_sampleAndEventBased(predLabels_test, testData['Labels'].to_numpy(), PerformanceParams)
-        # test smoothing - moving average
-        predLabels_MovAvrg = movingAvrgSmoothing(predLabels_test, PerformanceParams.smoothingWinLen,  PerformanceParams.votingPercentage)
-        AllRes_test[patIndx, 9:18] = performance_sampleAndEventBased(predLabels_MovAvrg, testData['Labels'].to_numpy(), PerformanceParams)
-        # test smoothing - moving average
-        predLabels_Bayes = smoothenLabels_Bayes(predLabels_test, probabLab_test, PerformanceParams.smoothingWinLen, PerformanceParams.bayesProbThresh)
-        AllRes_test[patIndx, 18:27] = performance_sampleAndEventBased(predLabels_Bayes, testData['Labels'].to_numpy(), PerformanceParams)
-        outputName = outPredictionsFolder + '/AllSubj_PerformanceAllSmoothing_OldMetrics.csv'
-        saveDataToFile(AllRes_test, outputName, 'csv')
-
-        #visualize predictions
-        outName=outPredictionsFolder + '/'+ pat+'_PredictionsInTime'
-        plotPredictionsMatchingInTime(testData['Labels'].to_numpy(), predLabels_test, predLabels_MovAvrg, predLabels_Bayes, outName, PerformanceParams)
-
-
-        # Saving predicitions in time
-        dataToSave = np.vstack((testData['Labels'].to_numpy(), probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose()   # added from which file is specific part of test set
-        dataToSaveDF=pd.DataFrame(dataToSave, columns=['TrueLabels', 'ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])
-        outputName = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
-        saveDataToFile(dataToSaveDF, outputName, 'parquet.gzip')
-
-        # CREATE ANNOTATION FILE
-        predlabels= np.vstack((probabLab_test, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
+        print("result_file",result_file)
+        predlabels = pd.read_parquet(result_file)
         testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
-        annotationsTrue=readDataFromFile(TrueAnnotationsFile)
+
+        annotationsTrue = readDataFromFile(TrueAnnotationsFile)
         annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
         if (patIndx==0):
             annotationAllSubjPred=annotationAllPred
         else:
             annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
         #save every time, just for backup
-        PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
-        annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
-    #############################################################
-    #EVALUATE PERFORMANCE  - Compare two annotation files
+        PredictedAnnotationsFileLoad = outPredictionsFolder + '/' + dataset + 'loadAnnotationPredictions.csv'
+        # print(PredictedAnnotationsFile)
+        # quit()
+        annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFileLoad, index=False)
     print('EVALUATING PERFORMANCE')
     labelFreq=1/FeaturesParams.winStep
     TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+    # print()
     # Calcualte performance per file by comparing true annotations file and the one created by ML training
     paramsPerformance = scoring.EventScoring.Parameters(
         toleranceStart=PerformanceParams.toleranceStart,
@@ -226,32 +251,32 @@ def trainRusGeneral():
 
 
     # ### PLOT IN TIME
-    # for patIndx, pat in enumerate(GeneralParams.patients):
-    #     print(pat)
-    #     InName = outPredictionsFolder + 'Subj' + pat + '_' + StandardMLParams.modelType + '_TestPredictions.csv.parquet.gzip'
-    #     data= readDataFromFile(InName)
+    for patIndx, pat in enumerate(GeneralParams.patients):
+        print(pat)
+        InName = outPredictionsFolder + '/Subj' + pat + '_' + 'Transformer' + '_TestPredictions.csv.parquet.gzip'
+        data= readDataFromFile(InName)
 
-    #     # visualize predictions
-    #     # outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime'
-    #     # plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+        # visualize predictions
+        outName = outPredictionsFolder + '/' + pat + '_PredictionsInTimeLoad'
+        plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
 
-    #     y_true = data['TrueLabels'].values
-    #     y_scores = data['ProbabLabels'].values
+        # y_true = data['TrueLabels'].values
+        # y_scores = data['ProbabLabels'].values
 
-    #     fpr, tpr, thresholds = roc_curve(y_true, y_scores)
-    #     auc = roc_auc_score(y_true, y_scores)
+        # fpr, tpr, thresholds = roc_curve(y_true, y_scores)
+        # auc = roc_auc_score(y_true, y_scores)
 
-    #     plt.figure()
-    #     plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % auc)
-    #     plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    #     plt.xlim([0.0, 1.0])
-    #     plt.ylim([0.0, 1.05])
-    #     plt.xlabel('False Positive Rate')
-    #     plt.ylabel('True Positive Rate')
-    #     plt.title('Receiver Operating Characteristic')
-    #     plt.legend(loc="lower right")
-    #     outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
-    #     plt.savefig(outName_ROC)
+        # plt.figure()
+        # plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % auc)
+        # plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        # plt.xlim([0.0, 1.0])
+        # plt.ylim([0.0, 1.05])
+        # plt.xlabel('False Positive Rate')
+        # plt.ylabel('True Positive Rate')
+        # plt.title('Receiver Operating Characteristic')
+        # plt.legend(loc="lower right")
+        # outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROCLoad'
+        # plt.savefig(outName_ROC)
 
 
     # # ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER

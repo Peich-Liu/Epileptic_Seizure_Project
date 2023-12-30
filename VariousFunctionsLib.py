@@ -336,6 +336,15 @@ def createTimeStamps(fileStartTime, samplFreq, lenfile, winLen, stepLen):
         timeStamps.append(fileStartTime + datetime.timedelta(seconds=i))
     return timeStamps
 
+def z_score_normalize(data):
+    mean = data.mean(axis=0)
+    std = data.std(axis=0)
+
+    data_out = (data - mean) / std
+    data_out[:, std == 0] = 0
+    
+    return data_out
+
 def normalizeWithPercentile(data, perc=0.99):
     if perc>1:
         perc=perc/100
@@ -399,6 +408,8 @@ def calculateFeaturesForAllFiles(folderIn, folderOut, DatasetPreprocessParams, F
         elif (dataNorm=='QuantileNormalization'):
             eegDataDF= QuantileNormalization(eegDataDF)
             # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
+        elif(dataNorm=='Z-Score'):
+            eegDataDF= z_score_normalize(eegDataDF)
         # Create time stamps for each sample
         timeStamps= createTimeStamps(fileStartTime, samplFreq, eegDataDF.shape[0], FeaturesParams.winLen, FeaturesParams.winStep)
 
@@ -540,9 +551,9 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
     annotations_df = readDataFromFile(labelsFile)
     # print(annotations_df)
     filesList=annotations_df.filepath.to_list()
-        
     startIndxOfFiles=[]
     # print("fileNames",fileNames)
+    # print("annotations_df",annotations_df['filepath'])
     for f, fileName in enumerate(fileNames):
         # Create names to match files
         dir=os.path.dirname(fileName).split('/')[-1]
@@ -568,7 +579,6 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
             indx=annotations_df.index[annotations_df['filepath'] == filePathToSearch].tolist()
         except:
             print('a')
-
         # Read data
         data_df = readDataFromFile(fileName)
         # Create labels for this file
@@ -579,13 +589,15 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
                 try:
                     t1 = datetime.timedelta(seconds=int(annotations_df.startTime[i])-1)+ datetime.datetime.strptime(annotations_df.dateTime[i],  "%Y-%m-%d %H:%M:%S")
                     t2 = datetime.timedelta(seconds=int(annotations_df.endTime[i])-1) + datetime.datetime.strptime(annotations_df.dateTime[i],  "%Y-%m-%d %H:%M:%S")
+                    # print("t2t2t2")
                 except: #when there was no H,M and S in start of the file (e.g. in SeizIT)
                     t1 = datetime.timedelta(seconds=int(annotations_df.startTime[i]) - 1) + datetime.datetime.strptime( annotations_df.dateTime[i], "%Y-%m-%d")
                     t2 = datetime.timedelta(seconds=int(annotations_df.endTime[i]) - 1) + datetime.datetime.strptime(  annotations_df.dateTime[i], "%Y-%m-%d")
+                    # print("t1t1t1")
                 indxRangeNum=(data_df.Time>=t1).to_numpy()*1 + (data_df.Time>=t2).to_numpy()*1
                 indxsRange=np.where(indxRangeNum==1)#[0:-1]
                 labels[indxsRange]=1
-        print("123",f)
+        # print("123",f)
         #Concatenate all files
         if (f==0):
             dataOut=data_df
@@ -599,7 +611,7 @@ def concatenateDataFromFilesWithLabels(dataset, fileNames, labelsFile):
             labelsOut=np.concatenate((labelsOut, labels), axis=0)
             subjOut = np.concatenate((subjOut, [dir] * data_df.shape[0]), axis=0)
             fileOut = np.concatenate((fileOut, [filePathToSearch] * data_df.shape[0]), axis=0)
-    print("789",dataOut)
+    # print("789",dataOut)
     #add Labels column to dataframe
     dataOut.insert(1,'Labels',labelsOut.astype(int))
     # add subject
@@ -730,7 +742,7 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
 
 
 #test program is here
-def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.95):
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.85):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 
@@ -879,6 +891,7 @@ def calculateKLDivergenceForFeatures(dataset, patients, folderFeatures, TrueAnno
             print('-- Patient:', pat, 'NumSeizures:', len(filesAll))
 
             # load all files only once and mark where each file starts
+            print("TrueAnnotationsFile",TrueAnnotationsFile)
             dataOut0 = concatenateDataFromFilesWithLabels(dataset, filesAll, TrueAnnotationsFile)  # with labels
             # concatenate for all features
             print("dataOut=",dataOut0)
@@ -1083,6 +1096,7 @@ def loadOneSubjData(dataset, pat, inputFolder, featNames,channelNamesToKeep, Tru
      Colums of dataframe are: 'Subject', 'FileName', 'Time', 'Labels', all features...
     '''
     dataOut = pd.DataFrame([])
+    print("featNames",featNames)
     for fIndx, fName in enumerate(featNames):
         # # # testing old features # TODO: OLD FEATURES
         # outDirFeatures = '../../01_' + dataset + '/02_Features_1to30Hz_4_0.5/' #OLD FEATURES
@@ -1094,12 +1108,13 @@ def loadOneSubjData(dataset, pat, inputFolder, featNames,channelNamesToKeep, Tru
         # dataFixedCols = dataOut0[['Subject', 'FileName', 'Labels']]
         # dataOut = pd.concat([dataOut, dataOut0.drop(['Subject', 'FileName', 'Labels'], axis=1)], axis=1)
 
-
+        # print("inputFolder",inputFolder,"pat",pat,"fName",fName)
         filesAll = np.sort(glob.glob(inputFolder + '/' + pat + '/*' + fName + '.parquet.gzip'))
         # load all files only once and mark where each file starts
         # (dataOut0, startIndxOfSubjects) = concatenateDataFromFiles(filesAll) # without labels
+        # print("filesAll",filesAll)
         dataOut0 = concatenateDataFromFilesWithLabels(dataset, filesAll, TrueAnnotationsFile)  # with labels
-
+        #im here
         print('-- Patient:', pat, 'NumFiles:', len(filesAll))
         # concatenate for all features
         dataFixedCols = dataOut0[['Subject', 'FileName', 'Time', 'Labels']]
@@ -1376,28 +1391,28 @@ def splitDataIntoWindows(folderIn, folderOut,DatasetPreprocessParams, FeaturesPa
         # np.save(os.path.join(folderOut,folder_name+'windows.npy'), all_windows_array)
     # return windows
     
-def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, threshold=0.8):
+def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, threshold=0.9):
 
     # Load model
     model = Net(n_channel, n_classes)
     model.load_state_dict(torch.load(model_path))
     model.eval()
-
+    
     all_predictions = []
     all_probabilities = []
     all_labels = []
 
     with torch.no_grad():
         for data, labels,_ in test_loader:
-            if torch.cuda.is_available():
-                data = data.cuda()
-                model = model.cuda()
+            # if torch.cuda.is_available():
+            #     data = data.cuda()
+            #     model = model.cuda()
 
             outputs = model(data)
             probabilities = torch.softmax(outputs, dim=1)
             
             # predicted_classes = (probabilities[:, 1] > probabilities[:,0]).long()
-            predicted_classes = (probabilities[:, 1] > 0.5).long()
+            predicted_classes = (probabilities[:, 1] > threshold).long()
             # print("probabilities=",probabilities[:,0],probabilities[:,1])
             # if probabilities[0]<probabilities[1]:
             #     print("1111")
@@ -1432,5 +1447,29 @@ def custom_collate_fn(batch):
 
     data_batch = default_collate(data_batch)
     label_batch = default_collate(label_batch)
-
+    # print(data_batch.shape)
     return data_batch, label_batch, additional_info_batch
+
+# def custom_collate_fn(batch):
+#     data_batch = [item[0] for item in batch]
+#     label_batch = [item[1] for item in batch]
+#     additional_info_batch = [item[2] for item in batch]
+
+#     max_length = max([x.size(1) for x in data_batch])
+    
+#     padded_data_batch = []
+#     for data in data_batch:
+#         length = data.size(1)
+#         if length < max_length:
+#             padding = torch.zeros((data.size(0), max_length - length), dtype=data.dtype)
+#             padded_data = torch.cat((data, padding), dim=1)
+#             padded_data_batch.append(padded_data)
+#         else:
+#             padded_data_batch.append(data)
+
+#     label_batch = default_collate(label_batch)
+#     # additional_info_batch = default_collate(additional_info_batch)
+
+#     data_batch = default_collate(padded_data_batch)
+    
+#     return data_batch, label_batch, additional_info_batch

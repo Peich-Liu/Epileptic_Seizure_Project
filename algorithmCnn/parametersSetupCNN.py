@@ -23,7 +23,7 @@ class GeneralParamsCNN:
 ##############################################################################################
 #### PREPROCESSING PARAMETERS
 class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
-    dataset = 'SIENA'
+    dataset = 'CHBMIT'
     samplFreq = 256  # sampling frequency of data
     #Channels structure
     #Unipolar channels
@@ -80,7 +80,7 @@ class PerformanceParams:
     maxEventDuration=300 #max length of sizure, automatically split events longer than a given duration
     minDurationBetweenEvents= 90 #mergint too close seizures, automatically merge events that are separated by less than the given duration
 
-    predictionFreq=1/winParamsCNN.winStep #ultimate frequency of predictions
+    predictionFreq=1/winParamsCNN.winStepTest #ultimate frequency of predictions
 
 
 
@@ -115,139 +115,85 @@ StandardParamsCNN.allFeatNames = None
 ##############################################################################################
 #### DEEP LEARNING PARAMETER
 class EEGDataset(Dataset):
-    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
-        self.folderIn = folderIn
-        self.file_data = {} 
-        self.sampling_rate = samplFreq
-        self.window_size = winLen * samplFreq
-        self.step_size =  winStep * samplFreq 
-        # print("window_size=",self.window_size,"step_size=",self.step_size)
-        self.edfFiles = []
-        # print("folderIn=",folderIn)
-        for folder in folderIn:
-            # print(folder)
-            edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
-            self.edfFiles.extend(edfFilesInFolder)
-        # self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-        self.current_file_index = 0
-        self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
-        self.current_file_length = self.current_data.shape[0]
-        self.index_within_file = 0
-        # self.seizure_info_df = pd.read_csv(labelFile)
-        self.seizure_info_df = seizure_info_df
-        self.file_to_seizure = {}
-        for _, row in self.seizure_info_df.iterrows():
-            relative_path = row['filepath']
-            absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
-            if os.path.exists(absolute_path):
-                self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
-        self.filepaths = list(self.file_to_seizure.keys())
-        # unbalanced data modify
-        self.window_indices = []
+    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep, Norm):
+        # self.dataNorm = Norm
+        # self.folderIn = folderIn
+        # self.standDir = standDir
+        # self.file_data = {} 
+        # self.sampling_rate = samplFreq
+        # self.window_size = winLen * samplFreq
+        # self.step_size =  winStep * samplFreq 
+
+        # self.edfFiles = []
+
+        # for folder in folderIn:
+        #     print("folder",folder)
+        #     edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
+        #     self.edfFiles.extend(edfFilesInFolder)
+        # self.edfFiles.sort()
+
+        # self.seizure_info_df = seizure_info_df
+        # self.file_to_seizure = {}
+        # for _, row in self.seizure_info_df.iterrows():
+        #     relative_path = row['filepath']
+        #     absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
+        #     if os.path.exists(absolute_path):
+        #         self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
+        # print("file_to_seizure",self.file_to_seizure)
         
-        for file_idx, file_path in enumerate(self.edfFiles):
-            num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
-            for within_file_idx in range(num_windows):
-                start = within_file_idx * self.step_size
-                end = start + self.window_size
-                if file_path in self.file_to_seizure:
-                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
-                    if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
-                        label = 1
-                    else:
-                        label = 0
-                    
-                else:
-                    label = 0
-                
-                if end > self.current_file_length:
-                    print("skip")
-                    continue
-                self.window_indices.append((file_idx, within_file_idx, label))
+        # self.filepaths = list(self.file_to_seizure.keys())
 
-        label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
-        label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
+        # # unbalanced data modify
+        # self.window_indices = []
+        # print("edfFiles",self.edfFiles)
+        # for file_idx, file_path in enumerate(self.edfFiles):
+        #     self.current_file_index = file_idx
+        #     self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
+        #     self.current_file_length = self.current_data.shape[0]
+        #     self.index_within_file = 0
+        #     num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
 
-        # if len(label_0_indices) > 100000:
-        #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
-        sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        self.balanced_window_indices = sampled_label_0_indices + label_1_indices
-        random.shuffle(self.balanced_window_indices)
-        print("self.balanced_window_indices=",len(self.balanced_window_indices))
-
-
-    def __len__(self):
-        return len(self.balanced_window_indices)
-    
-    def __getitem__(self, idx):
-        # print("idx:", idx)
-        # file_idx, within_file_idx, label = self.balanced_window_indices[idx]
-        # self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(file_idx)
-        file_idx, within_file_idx, label = self.balanced_window_indices[idx]
-        # if self.edfFiles[file_idx] not in self.file_data:
-        #     self.load_file(file_idx)
-        #     print("load")
-        start = within_file_idx * self.step_size
-        end = start + self.window_size
-        # if end > len(self.current_data):
-        #     raise IndexError("Index out of range")
-        window = self.current_data[start:end].to_numpy()
-        window_tensor = torch.tensor(window, dtype=torch.float)
-        window_tensor = window_tensor.transpose(0, 1)
-        # print("window_tensor=",window_tensor,"file_idx=",file_idx)
-        # add a error report
-        # if(window_tensor.shape != torch.Size([18, 1024])):
-        #     print("error=",window_tensor)
-        return window_tensor, torch.tensor(label, dtype=torch.long)      
-    
-    
-    def load_file(self, file_index):
-        # print("edfFiles=",self.edfFiles,"file_index=",file_index)
-        filepath = self.edfFiles[file_index]
-        eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
-        # print("eegDataDF=",eegDataDF)
-        return eegDataDF, samplFreq, fileStartTime
-    
-
-
-class EEGDatasetTest(Dataset):
-    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep):
+        #     print("file_path",file_path)        
+        self.dataNorm = Norm
         self.folderIn = folderIn
         self.standDir = standDir
         self.file_data = {} 
         self.sampling_rate = samplFreq
         self.window_size = winLen * samplFreq
-        self.step_size =  winStep * samplFreq 
-        # print("window_size=",self.window_size,"step_size=",self.step_size)
+        self.step_size =  winStep * samplFreq
+        self.file_cache = {}
+
         self.edfFiles = []
-        # print("folderIn=",folderIn)
+
         for folder in folderIn:
-            # print(folder)
+            print("folder",folder)
             edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
             self.edfFiles.extend(edfFilesInFolder)
         self.edfFiles.sort()
-        # self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-        self.current_file_index = 0
-        self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
-        self.current_file_length = self.current_data.shape[0]
-        self.index_within_file = 0
-        # self.seizure_info_df = pd.read_csv(labelFile)
+
         self.seizure_info_df = seizure_info_df
+        print("seizure_info_df",seizure_info_df)
         self.file_to_seizure = {}
         for _, row in self.seizure_info_df.iterrows():
             relative_path = row['filepath']
             absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
             if os.path.exists(absolute_path):
                 self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
+        print("file_to_seizure",self.file_to_seizure)
+        
         self.filepaths = list(self.file_to_seizure.keys())
 
         # unbalanced data modify
         self.window_indices = []
-
-        # print("self.edfFiles",self.edfFiles)
+        print("edfFiles",self.edfFiles)
         for file_idx, file_path in enumerate(self.edfFiles):
+            self.current_file_index = file_idx
+            self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
+            self.current_file_length = self.current_data.shape[0]
+            self.index_within_file = 0
+            # print("file_path",file_path,"current_data",self.current_data,"current_data.shape",self.current_data.shape[0])
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
+            print("num_windows",num_windows)
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
                 end = start + self.window_size
@@ -265,16 +211,186 @@ class EEGDatasetTest(Dataset):
                     print("skip")
                     continue
                 self.window_indices.append((file_idx, within_file_idx, label))
+        print("trainwindow_indices",len(self.window_indices))
+        label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
+        label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
-        # label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
-        # label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
+        # # if len(label_0_indices) > 100000:
+        # #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
+        # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
+        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
+        # self.balanced_window_indices = sampled_label_0_indices+ label_1_indices
+        # # self.balanced_window_indices = label_0_indices + label_1_indices
+        # random.shuffle(self.balanced_window_indices)
+        # print("self.balanced_window_indices=",len(self.balanced_window_indices))
+
+
+    def __len__(self):
+        # return len(self.balanced_window_indices)
+        return len(self.window_indices)
+
+    
+    
+    def __getitem__(self, idx):
+        # print("idx",idx)
+        file_idx, within_file_idx, label = self.window_indices[idx]
+        # print("file_idx",file_idx)
+        start = within_file_idx * self.step_size
+        end = start + self.window_size
+        filepath = self.edfFiles[file_idx]
+        # print("getitem",filepath)
+        current_data, sampleFreq, _ = self.load_file(file_idx)
+        rel_filepath = os.path.relpath(filepath, start=self.standDir)
+        seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
         
-        # self.window_indices = label_0_indices + label_1_indices
-        # # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        # # # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        # # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
-        # # random.shuffle(self.balanced_window_indices)
-        # print("self.test_window_indices=",len(self.test_window_indices))
+        window_start_time_seconds = within_file_idx * self.step_size / self.sampling_rate
+        try:
+            file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d %H:%M:%S')
+        except:
+            file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d')
+            
+        window_start_datetime = file_start_datetime + timedelta(seconds=window_start_time_seconds)
+        # print("window_start_datetime",window_start_datetime)
+
+        window = current_data[start:end].to_numpy()
+        # print("window",window.shape)
+        window_tensor = torch.tensor(window, dtype=torch.float)
+        window_tensor = window_tensor.transpose(0, 1)
+        # print("additional_info",additional_info)
+        # print("start",start)
+        return window_tensor, torch.tensor(label, dtype=torch.long)
+    
+    def load_file(self, file_index):
+        filepath = self.edfFiles[file_index]
+
+        if filepath not in self.file_cache:
+
+            eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+            if self.dataNorm == 'NormWithPercentile':
+                eegDataDF = normalizeWithPercentile(eegDataDF, 0.99)
+            elif self.dataNorm == 'QuantileNormalization':
+                eegDataDF = QuantileNormalization(eegDataDF)
+            elif self.dataNorm == 'Z-Score':
+                eegDataDF = z_score_normalize(eegDataDF)
+
+            self.file_cache[filepath] = (eegDataDF, samplFreq, fileStartTime)
+        return self.file_cache[filepath]
+        # print("filepath",filepath)
+        # eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+    def clear_cache(self):
+        self.file_cache.clear()    
+    # def __getitem__(self, idx):
+    #     file_idx, within_file_idx, label = self.balanced_window_indices[idx]
+    #     start = within_file_idx * self.step_size
+    #     end = start + self.window_size
+
+    #     window = self.current_data[start:end].to_numpy()
+    #     window_tensor = torch.tensor(window, dtype=torch.float)
+    #     window_tensor = window_tensor.transpose(0, 1)
+
+    #     return window_tensor, torch.tensor(label, dtype=torch.long)      
+    
+    
+    # def load_file(self, file_index):
+    #     filepath = self.edfFiles[file_index]
+    #     eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+    #     if (self.dataNorm=='NormWithPercentile'):
+    #         eegDataDF= normalizeWithPercentile(eegDataDF, 0.99)
+    #         # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
+    #     elif (self.dataNorm=='QuantileNormalization'):
+    #         eegDataDF= QuantileNormalization(eegDataDF)
+    #         # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
+    #     elif(self.dataNorm=='Z-Score'):
+    #         eegDataDF= z_score_normalize(eegDataDF)
+    #     return eegDataDF, samplFreq, fileStartTime
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class EEGDatasetTest(Dataset):
+    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep,Norm):
+        self.dataNorm = Norm
+        self.folderIn = folderIn
+        self.standDir = standDir
+        self.file_data = {} 
+        self.sampling_rate = samplFreq
+        self.window_size = winLen * samplFreq
+        self.step_size =  winStep * samplFreq
+        self.file_cache = {}
+
+
+        self.edfFiles = []
+
+        for folder in folderIn:
+            print("folder",folder)
+            edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
+            self.edfFiles.extend(edfFilesInFolder)
+        self.edfFiles.sort()
+
+        self.seizure_info_df = seizure_info_df
+        print("seizure_info_df",seizure_info_df)
+        self.file_to_seizure = {}
+        for _, row in self.seizure_info_df.iterrows():
+            relative_path = row['filepath']
+            absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
+            if os.path.exists(absolute_path):
+                self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
+        print("file_to_seizure",self.file_to_seizure)
+        
+        self.filepaths = list(self.file_to_seizure.keys())
+
+        # unbalanced data modify
+        self.window_indices = []
+        print("edfFiles",self.edfFiles)
+        for file_idx, file_path in enumerate(self.edfFiles):
+            self.current_file_index = file_idx
+            self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
+            self.current_file_length = self.current_data.shape[0]
+            self.index_within_file = 0
+            # print("file_path",file_path,"current_data",self.current_data,"current_data.shape",self.current_data.shape[0])
+            num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
+            print("num_windows",num_windows)
+            for within_file_idx in range(num_windows):
+                start = within_file_idx * self.step_size
+                end = start + self.window_size
+                if file_path in self.file_to_seizure:
+                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
+                    if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
+                        label = 1
+                    else:
+                        label = 0
+                    
+                else:
+                    label = 0
+                
+                if end > self.current_file_length:
+                    print("skip")
+                    continue
+                self.window_indices.append((file_idx, within_file_idx, label))
+                # print("file_idx",file_idx,"within_file_idx",within_file_idx,"label",label)
+        print("self.window_indices",len(self.window_indices))
+        print("window1",self.window_indices[1])
 
 
     def __len__(self):
@@ -283,23 +399,18 @@ class EEGDatasetTest(Dataset):
 
     
     def __getitem__(self, idx):
-        # print("idx:", idx)
-        # file_idx, within_file_idx, label = self.balanced_window_indices[idx]
-        # self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(file_idx)
-        # file_idx, within_file_idx, label = self.test_window_indices[idx]
+        # print("idx",idx)
         file_idx, within_file_idx, label = self.window_indices[idx]
-        # if self.edfFiles[file_idx] not in self.file_data:
-        #     self.load_file(file_idx)
-        #     print("load")
-        
+        # print("file_idx",file_idx)
         start = within_file_idx * self.step_size
         end = start + self.window_size
         filepath = self.edfFiles[file_idx]
+        # print("getitem",filepath)
+        current_data, sampleFreq, _ = self.load_file(file_idx)
         rel_filepath = os.path.relpath(filepath, start=self.standDir)
+        # print("rel_filepath",rel_filepath)
         seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
-
-        # print("rel_filepath=",rel_filepath)
-        # seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
+        
         window_start_time_seconds = within_file_idx * self.step_size / self.sampling_rate
         try:
             file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d %H:%M:%S')
@@ -322,29 +433,40 @@ class EEGDatasetTest(Dataset):
         'channels': seizure_record['channels'].iloc[0] if not seizure_record.empty else None,
         'filepath': rel_filepath,
     }
-        # print("seizure_record",seizure_record)
-        # print("additional_info",additional_info)
-        # if end > len(self.current_data):
-        #     raise IndexError("Index out of range")
-        window = self.current_data[start:end].to_numpy()
+
+        window = current_data[start:end].to_numpy()
+        # print("window",window.shape)
         window_tensor = torch.tensor(window, dtype=torch.float)
         window_tensor = window_tensor.transpose(0, 1)
-        # print("self.seizure_info_df",self.seizure_info_df)
-        # print("window_tensor=",window_tensor.shape,"file_idx=",file_idx)
-        # add a error report
-        # if(window_tensor.shape != torch.Size([18, 1024])):
-        #     print("error=",window_tensor)
-        return window_tensor, torch.tensor(label, dtype=torch.long), additional_info    
-    
+        # print("additional_info",additional_info)
+        # print("start",start)
+        return window_tensor, torch.tensor(label, dtype=torch.long), additional_info
     
     def load_file(self, file_index):
-        # print("edfFiles=",self.edfFiles,"file_index=",file_index)
         filepath = self.edfFiles[file_index]
-        print("filepath",filepath)
-        eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
-        # print("eegDataDF=",eegDataDF)
-        return eegDataDF, samplFreq, fileStartTime
+        if filepath not in self.file_cache:
+            eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+            if self.dataNorm == 'NormWithPercentile':
+                eegDataDF = normalizeWithPercentile(eegDataDF, 0.99)
+            elif self.dataNorm == 'QuantileNormalization':
+                eegDataDF = QuantileNormalization(eegDataDF)
+            elif self.dataNorm == 'Z-Score':
+                eegDataDF = z_score_normalize(eegDataDF)
 
-
-# class EEGtesttest(EEGDataForDL):
-    
+            self.file_cache[filepath] = (eegDataDF, samplFreq, fileStartTime)
+        return self.file_cache[filepath]
+        # print("filepath",filepath)
+        # eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+    def clear_cache(self):
+        self.file_cache.clear()
+        
+        
+        # if (self.dataNorm=='NormWithPercentile'):
+        #     eegDataDF= normalizeWithPercentile(eegDataDF, 0.99)
+        #     # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
+        # elif (self.dataNorm=='QuantileNormalization'):
+        #     eegDataDF= QuantileNormalization(eegDataDF)
+        #     # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
+        # elif(self.dataNorm=='Z-Score'):
+        #     eegDataDF= z_score_normalize(eegDataDF)
+        # return eegDataDF, samplFreq, fileStartTime

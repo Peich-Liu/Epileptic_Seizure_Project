@@ -465,7 +465,7 @@ class AnomalyRunner(BaseRunner):
         self.epoch_metrics['epoch'] = epoch_num
         self.epoch_metrics['loss'] = epoch_loss
         file_path = os.path.join(outputDir, 'model_epoch_{}.pth'.format(epoch_num))
-        checkpoint_filename = f"{DatasetPreprocessParamsTF.dataset}_checkpoint_epoch_{epoch_num}.pth"
+        checkpoint_filename = f"checkpoint/{DatasetPreprocessParamsTF.dataset}_checkpoint_epoch_{epoch_num}.pth"
         torch.save(self.model.state_dict(), file_path.format(epoch_num))
         torch.save({
             'epoch': epoch_num,

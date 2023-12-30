@@ -36,7 +36,8 @@ class DatasetPreprocessParamsTF: # mostly based on CHB-MIT dataset
     channelNamesToKeep=channelNamesToKeep_Unipolar
 
     # raw EEG data normalization
-    eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization'
+    # eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization' 'Z-Score'
+    eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization' 'Z-Score'
 
 ##############################################################################################
 #### FEATURES PARAMETERS
@@ -60,7 +61,7 @@ class PerformanceParamsTF:
     bayesProbThresh = 1.5  # smoothing with cummulative probabilities, threshold from Valentins paper
 
     #EVENT BASED PERFORMANCE METRIC
-    toleranceStart = 30 #in seconds - tolerance before seizure not to count as FP
+    toleranceStart = 50 #in seconds - tolerance before seizure not to count as FP
     toleranceEnd =60  #in seconds - tolerance after seizure not to count as FP
     minOveralp =0 #minimum relative overlap between predicted and true seizure to count as match
     maxEventDuration=300 #max length of sizure, automatically split events longer than a given duration
@@ -395,19 +396,16 @@ class EEGDatasetTestTF(Dataset):
         self.sampling_rate = samplFreq
         self.window_size = winLen * samplFreq
         self.step_size =  winStep * samplFreq 
-        # print("window_size=",self.window_size,"step_size=",self.step_size)
+        self.file_cache = {}
+
         self.edfFiles = []
-        # print("folderIn=",folderIn)
+
         for folder in folderIn:
             # print(folder)
             edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
             self.edfFiles.extend(edfFilesInFolder)
         self.edfFiles.sort()
-        # self.edfFiles = np.sort(glob.glob(os.path.join(folderIn, '**/*.edf'), recursive=True))
-        self.current_file_index = 0
-        self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
-        self.current_file_length = self.current_data.shape[0]
-        self.index_within_file = 0
+
         # self.seizure_info_df = pd.read_csv(labelFile)
         self.seizure_info_df = seizure_info_df
         self.file_to_seizure = {}
@@ -423,6 +421,10 @@ class EEGDatasetTestTF(Dataset):
 
         # print("self.edfFiles",self.edfFiles)
         for file_idx, file_path in enumerate(self.edfFiles):
+            self.current_file_index = file_idx
+            self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
+            self.current_file_length = self.current_data.shape[0]
+            self.index_within_file = 0
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
@@ -442,16 +444,6 @@ class EEGDatasetTestTF(Dataset):
                     continue
                 self.window_indices.append((file_idx, within_file_idx, label))
 
-        # label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
-        # label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
-        
-        # self.window_indices = label_0_indices + label_1_indices
-        # # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        # # # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        # # self.balanced_window_indices = sampled_label_0_indices + label_1_indices
-        # # random.shuffle(self.balanced_window_indices)
-        # print("self.test_window_indices=",len(self.test_window_indices))
-
 
     def __len__(self):
         # return len(self.test_window_indices)
@@ -459,19 +451,23 @@ class EEGDatasetTestTF(Dataset):
 
     
     def __getitem__(self, idx):
-        # print("idx:", idx)
-        # file_idx, within_file_idx, label = self.balanced_window_indices[idx]
-        # self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(file_idx)
-        # file_idx, within_file_idx, label = self.test_window_indices[idx]
+        # print("idx",idx)
         file_idx, within_file_idx, label = self.window_indices[idx]
         # if self.edfFiles[file_idx] not in self.file_data:
         #     self.load_file(file_idx)
         #     print("load")
         
+        # start = within_file_idx * self.step_size
+        # end = start + self.window_size
+        # filepath = self.edfFiles[file_idx]
+        # rel_filepath = os.path.relpath(filepath, start=self.standDir)
         start = within_file_idx * self.step_size
         end = start + self.window_size
         filepath = self.edfFiles[file_idx]
+        # print("getitem",filepath)
+        current_data, sampleFreq, _ = self.load_file(file_idx)
         rel_filepath = os.path.relpath(filepath, start=self.standDir)
+        # print("rel_filepath",rel_filepath)
         seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
 
         # print("rel_filepath=",rel_filepath)
@@ -499,7 +495,7 @@ class EEGDatasetTestTF(Dataset):
         # print("additional_info",additional_info)
         # if end > len(self.current_data):
         #     raise IndexError("Index out of range")
-        window = self.current_data[start:end].to_numpy()
+        window = current_data[start:end].to_numpy()
         window_tensor = torch.tensor(window, dtype=torch.float)
         # window_tensor = window_tensor.transpose(0, 1)
         # print("self.seizure_info_df",self.seizure_info_df)
@@ -512,12 +508,18 @@ class EEGDatasetTestTF(Dataset):
     def load_file(self, file_index):
         # print("edfFiles=",self.edfFiles,"file_index=",file_index)
         filepath = self.edfFiles[file_index]
-        print("filepath",filepath)
-        eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
-        # print("eegDataDF=",eegDataDF)
-        return eegDataDF, samplFreq, fileStartTime
-    
-    
+        if filepath not in self.file_cache:
+            eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+            self.file_cache[filepath] = (eegDataDF, samplFreq, fileStartTime)
+        return self.file_cache[filepath]
+        # print("filepath",filepath)
+        # eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
+        # # print("eegDataDF=",eegDataDF)
+        # # return eegDataDF, samplFreq, fileStartTime
+        # self.file_cache[filepath] = (eegDataDF, samplFreq, fileStartTime)
+        # return self.file_cache[filepath]
+    def clear_cache(self):
+        self.file_cache.clear()
     
 
 def collate_superv(data, max_len=None, task=None, oversample=False):

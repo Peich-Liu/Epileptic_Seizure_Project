@@ -42,7 +42,7 @@ def trainRusKfolder():
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParams.eegDataNormalization==''):
         outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '29debug_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
             FeaturesParams.featNames) + appendix+ '/'
     else:
@@ -99,7 +99,7 @@ def trainRusKfolder():
     # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
     # calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 
-    # # # CALCULATE KL DIVERGENCE OF FEATURES
+    # # CALCULATE KL DIVERGENCE OF FEATURES
     # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     # GeneralParams.patients.sort() #Sorting them
     # FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
@@ -113,7 +113,7 @@ def trainRusKfolder():
     # Create list of all subjects
     GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParams.patients.sort() #Sorting them
-    GeneralParams.patients=GeneralParams.patients[0:5]
+    # GeneralParams.patients=GeneralParams.patients[0:5]
     print("outDirFeatures",outDirFeatures)
     print("featNames",FeaturesParams.featNames)
     print("dataset",dataset)
@@ -286,3 +286,4 @@ def trainRusKfolder():
     # ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER
     # # load all predictions in time
     # TestDifferentPostprocessingParams(outPredictionsFolder, dataset, GeneralParams, StandardMLParams)
+trainRusKfolder()

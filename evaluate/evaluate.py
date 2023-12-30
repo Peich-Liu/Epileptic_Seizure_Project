@@ -37,6 +37,7 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
         params: Class with various parameters for scoring on the event basis.
     Returns: Dataframe containing various performances per each file.
     '''
+    print("labelFreq",labelFreq)
     results = {
         'subject': [],
         'session': [],
@@ -99,15 +100,17 @@ def evaluate2AnnotationFiles(refFilename: str, hypFilename: str, annotationsInTr
         # Convert annotations
         ref = Annotation(dfToEvents(refDf[refDf.filepath == filepath[0]]), labelFreq, nSamples)
         hyp = Annotation(dfToEvents(hypDf[hypDf.filepath == filepath[0]]), labelFreq, nSamples)
+        
         # print("ref",ref)
         # print("hyp",hyp)
         # Compute performance
         scoresEvent = scoring.EventScoring(ref, hyp, params)
         scoresSample = scoring.SampleScoring(ref, hyp)
+        print("filepath",filepath)
         print("scoresEvent.refTrue",scoresEvent.refTrue)
         print("scoresEvent.sensitivity",scoresEvent.sensitivity)
-        print("scoresSample",scoresSample.sensitivity)
-        print("results['Sample_numEvents']",results['Sample_numEvents'])
+        # print("scoresSample",scoresSample.sensitivity)
+        print("results['Event_numEvents']",results['Event_numEvents'])
         # Collect results
         for key in ['subject', 'session', 'recording', 'dateTime', 'duration', 'filepath']:
             results[key].append(refDf[refDf.filepath == filepath[0]][key].iloc[0])#123123123123123
@@ -255,7 +258,7 @@ def plotPerformancePerSubj(patients, performanceResults, folderOut):
         ax1.set_title(perf)
         ax1.grid()
     fig1.show()
-    fig1.savefig(folderOut + '/AllSubj_AllPerformanceMeasures.png', bbox_inches='tight')
+    fig1.savefig(folderOut + '/AllSubj_AllPerformanceMeasuresDebug.png', bbox_inches='tight')
     plt.close(fig1)
 
     # plot performance for all subj in form of boxplot
@@ -274,8 +277,8 @@ def plotPerformancePerSubj(patients, performanceResults, folderOut):
     ax1.grid()
     fig1.show()
     ax1.set_title('Performance distribution for all subjects')
-    fig1.savefig(folderOut + '/AllSubj_AllPerformanceMeasures_Boxplot.png', bbox_inches='tight')
-    fig1.savefig(folderOut + '/AllSubj_AllPerformanceMeasures_Boxplot.svg', bbox_inches='tight')
+    fig1.savefig(folderOut + '/AllSubj_AllPerformanceMeasures_BoxplotDebug.png', bbox_inches='tight')
+    fig1.savefig(folderOut + '/AllSubj_AllPerformanceMeasures_BoxplotDebug.svg', bbox_inches='tight')
     plt.close(fig1)
 
 
@@ -309,19 +312,23 @@ def createAnnotationFileFromPredictions(data, annotationTrue, labelColumnName):
     fileNamesTL.sort()
     fileNamesPL=set(data["FileName"].to_numpy())
     fileNamesPL = list(fileNamesPL)
+    print("fileNamesPL",fileNamesPL)
     fileNamesPL.sort()
     for fn in fileNamesPL:
         dataThisFile=data.loc[data['FileName'] == fn].reset_index(drop=True)
         d = dataThisFile[labelColumnName].to_numpy()
+        # d[-1] = 0
+        # d = d[~np.isnan(d)]
+        # print("ddddddd",d)
         startIndx=np.where(np.diff(d) == 1)[0]+1
         endIndx = np.where(np.diff(d) == -1)[0]+1
-        # if (len(d)>0):
         if (d[len(d)-1]==1):
             endIndx=np.append(endIndx, len(d)-1)
         elif  (d[0]==1 and startIndx[0]!=0):
             startIndx= np.insert(startIndx, 0,0)
         indxAnnotTrue=annotationTrue.index[annotationTrue['filepath']==fn].tolist()
         fixInfo=annotationTrue.loc[indxAnnotTrue, columnsToKeep]
+        # print("indxAnnotTrue",indxAnnotTrue)
         if (len(startIndx)==0): #no seizures detected, only add bckg
             row = np.asarray(['bckg', 0, fixInfo.loc[indxAnnotTrue[0], 'duration'], 1.0, 'all', fn])
             rowDF = pd.DataFrame(row.reshape((1, -1)),columns=['event', 'startTime', 'endTime', 'confidence', 'channels', 'filepath'])
@@ -332,13 +339,13 @@ def createAnnotationFileFromPredictions(data, annotationTrue, labelColumnName):
                 try:
                     start_time_str = fixInfo.loc[indxAnnotTrue[0], 'dateTime']
                     # print("Trying to parse:", start_time_str) 
-                    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
+                    # start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
                     startTime=dataThisFile.loc[startIndx[i],'Time']-datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0],'dateTime'],  "%Y-%m-%d %H:%M:%S")
                     endTime = dataThisFile.loc[endIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'],   "%Y-%m-%d %H:%M:%S")
                 except:
                     start_time_str = fixInfo.loc[indxAnnotTrue[0], 'dateTime']
                     # print("Trying to parse:", start_time_str)
-                    start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d")
+                    # start_time = datetime.datetime.strptime(start_time_str, "%Y-%m-%d")
                     startTime = dataThisFile.loc[startIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'], "%Y-%m-%d")
                     endTime = dataThisFile.loc[endIndx[i], 'Time'] - datetime.datetime.strptime(fixInfo.loc[indxAnnotTrue[0], 'dateTime'], "%Y-%m-%d")
                 if (startTime.total_seconds()<0 or endTime.total_seconds()<0):

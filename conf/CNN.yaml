@@ -1,6 +1,6 @@
 algorithm: CNN
 
-dataset: SeizIT1 #CHBMIT, SeizIT1, SIENA could be selected
+dataset: SIENA #CHBMIT, SeizIT1, SIENA could be selected
 trainType: Kfolder #This algorithm only has Kfolder train
 
 

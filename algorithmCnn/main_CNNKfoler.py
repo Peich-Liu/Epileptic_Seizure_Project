@@ -45,13 +45,12 @@ def trainCNNKfolder():
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsCNN.eegDataNormalization==''):
         # outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_TrainingResults' +'_CNN' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
-            winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']'+ '/'
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '30_12_new_TrainingResults' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
+            winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']'+'/'
     else:
         # outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNN.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
-            winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']_' + '-'.join(
-            winParamsCNN.featNames) + '/'
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
+            winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']_' + '/'
     # os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
 
@@ -106,9 +105,11 @@ def trainCNNKfolder():
     # Create list of all subjects
     GeneralParamsCNN.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParamsCNN.patients.sort() #Sorting them
-    # GeneralParamsCNN.patients=GeneralParamsCNN.patients[5:]
+    # GeneralParamsCNN.patients=GeneralParamsCNN.patients[:4]
     # dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParamsCNN.patients, None,DatasetPreprocessParamsCNN.channelNamesToKeep, TrueAnnotationsFile)
     # print("dataAllSubj=",dataAllSubj)
+    # ##########################
+    ###TRAINING
     print('TRAINING') # run leave-one-subject-out CV
     NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
     AllRes_test=np.zeros((len(GeneralParamsCNN.patients),27))
@@ -148,8 +149,9 @@ def trainCNNKfolder():
             label_df = annotationsTrue
             #temp modify
             # outDir = '/home/pliu/testForCNN/CHBCNNtemp'
-            trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep)
-            testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStepTest)
+            trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep, DatasetPreprocessParamsCNN.eegDataNormalization)
+            testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStepTest, DatasetPreprocessParamsCNN.eegDataNormalization)
+            
             test_data_pred = []
             info_path = 'info_' + test_patient + '.csv'
             #### load data info
@@ -163,18 +165,24 @@ def trainCNNKfolder():
                 }
                 test_data_pred.append(row)
             test_data_df = pd.DataFrame(test_data_pred)
-            test_data_df.to_csv(f'info_{test_patient}.csv',index=False)
-            # test_data_df = read_csv(info_path)
-            print("test_data_df=",test_data_df)
+            # test_data_df.to_csv(f'info_{test_patient}.csv',index=False)
+            # # test_data_df = read_csv(info_path)
+            # print("test_data_df=",test_data_df)
             # test_data_df = None
-            train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=False)
-            test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False,collate_fn=custom_collate_fn)
-        
-            # test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)    
-            # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            device = torch.device("cpu")
+            train_size = int(0.9 * len(trainSet))  
+            val_size = len(trainSet) - train_size
             
-            print("Using device:", device)
+            trainDataset, valDataset = random_split(trainSet, [train_size, val_size])
+
+            train_loader = DataLoader(trainDataset, batch_size=batch_size, shuffle=False)
+            val_loader = DataLoader(valDataset, batch_size=batch_size, shuffle=False)
+            
+            test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False,collate_fn=custom_collate_fn)
+            ##### test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=True)    
+            ##### device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            # device = torch.device("cpu")
+            
+            # print("Using device:", device)
             # print("train_loader",train_loader)
             # print("testSet",testSet)
             all_data = []
@@ -193,7 +201,21 @@ def trainCNNKfolder():
             # X_train.to(device)
             # y_train.to(device)
             print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
-            
+            val_data = []
+            val_labels = []
+            # test_labels_for_visual = []
+            for data, labels in val_loader:
+                # data = data.to(device)
+                # labels = labels.to(device)
+                val_data.append(data)
+                val_labels.append(labels)
+                # print("data",data,";labels=",labels)
+            X_val = torch.cat(val_data)
+            y_val = torch.cat(val_labels)
+            # X_train.to(device)
+            # y_train.to(device)
+            print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
+
             test_data = []
             test_labels = []
             test_labels_for_visual = []
@@ -207,13 +229,13 @@ def trainCNNKfolder():
                 test_labels_for_visual.extend(labels.numpy())
             # print("test_labels_for_visual",test_labels_for_visual)
             # quit()
-            # print("test_data567=",test_data)
-            X_val = torch.cat(test_data)
-            y_val = torch.cat(test_labels)
-            # X_val.to(device)
-            # y_val.to(device)
+            print("test_data567=",test_data)
+            X_test = torch.cat(test_data)
+            y_test = torch.cat(test_labels)
+            # #####X_val.to(device)
+            # #####y_val.to(device)
             print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
-            # # # ########################################## 
+            # ########################################## 
             # #TRAINING
             Train_set_chb=(X_train,y_train)
             val_dataset_chb=(X_val,y_val)
@@ -222,9 +244,9 @@ def trainCNNKfolder():
             Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
             learning_rate = 0.001
             Trainer_chb.compile(learning_rate=learning_rate)
-            epochs = 50
+            epochs = 60
             print(test_patient)
-            Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_siena_class1_{}.pt'.format(test_patient))
+            Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_3012_{}.pt'.format(test_patient))
             filename = f'training_output_subject_{test_patient}.csv'
             with open(filename, 'w', newline='') as file:
                 writer = csv.writer(file)
@@ -235,10 +257,10 @@ def trainCNNKfolder():
 
             print(f"Training data saved to {filename}")
             print(Tracker)        
-    #         # ########################################## 
+            # ########################################## 
             # #EVALUATE
-            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_siena_class1_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
-            print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
+            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_3012_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+            # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
             # print()
             # measure performance
             AllRes_test[patient_index, 0:9] = performance_sampleAndEventBased(predLabels_test, test_labels_for_visual, PerformanceParams)
@@ -276,9 +298,13 @@ def trainCNNKfolder():
             # # CREATE ANNOTATION FILE
             predlabels= np.vstack((predLabels, predLabels_test, predLabels_MovAvrg,  predLabels_Bayes)).transpose().astype(int)
             testPredictionsDF=pd.concat([test_data_df, pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
+            # print(testPredictionsDF)
             annotationsTrue=readDataFromFile(TrueAnnotationsFile)
-            print(annotationsTrue)
+            # print(annotationsTrue)
+            # quit()
             annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_MovAvrg')
+            print(annotationAllPred)
+            # quit()
             if (patIndx==0):
                 annotationAllSubjPred=annotationAllPred
             else:
@@ -323,9 +349,9 @@ def trainCNNKfolder():
         InName = outPredictionsFolder + '/Subj' + pat + '_CNN_TestPredictions.csv.parquet.gzip'
         data= readDataFromFile(InName)
 
-        # # visualize predictions
-        # outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime2'
-        # plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
+        # visualize predictions
+        outName = outPredictionsFolder + '/' + pat + '_PredictionsInTime2'
+        plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParams)
 
         y_true = data['TrueLabels'].values
         y_scores = data['ProbabLabels'].values
@@ -349,3 +375,5 @@ def trainCNNKfolder():
         outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
         # 保存图像到文件
         plt.savefig(outName_ROC)  # 指定保存路径
+        
+trainCNNKfolder()

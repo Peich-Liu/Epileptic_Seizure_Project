@@ -38,9 +38,11 @@ def get_training_function(train_type, algorithm):
 
 def main():
     # command
+
+    parser = argparse.ArgumentParser(description="framework of seizure detection")
+    
     default_Unipolar = ('Fp1', 'F3', 'C3', 'P3', 'O1', 'F7', 'T3', 'T5', 'Fz', 'Cz', 'Pz', 'Fp2', 'F4', 'C4', 'P4', 'O2', 'F8', 'T4', 'T6')
     default_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
-    parser = argparse.ArgumentParser(description="framework of seizure detection")
     parser.add_argument("--algorithm", type=str,default='RusBoost', choices=['RusBoost', 'CNN','Transformer'], help="algorithm name")
     parser.add_argument("--dataset", type=str,default='SIENA', choices=['SIENA', 'CHBMIT','SeizIT1'], help="dataset name")
     parser.add_argument("--trainType", type=str,default='Kfolder', choices=['Kfolder', 'general','personal'], help="different algorithm has different requirement, can check in the conf files")
@@ -49,6 +51,7 @@ def main():
     algorithm = args.algorithm
     configPath = 'conf/'+algorithm + '.yaml'
     config = load_yaml_config(configPath)
+
 
     paramUpdate = parametersUpdate({'Unipolar':config['DatasetPreprocessParams']['Unipolar'],
                                     'Bipolar':config['DatasetPreprocessParams']['Bipolar'],
