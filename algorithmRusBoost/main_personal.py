@@ -5,7 +5,9 @@ from algorithmRusBoost.parametersSetupRUS import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os
+
 def trainRusPersonal():
+    torch.cuda.set_device(1) 
     #####################################################
     #Dataset Setting
     dataset = DatasetPreprocessParams.dataset
@@ -132,11 +134,11 @@ def trainRusPersonal():
         print(pat)
         # Load all files from this subject
         dataFinal=loadOneSubjData(dataset, pat, outDirFeatures, FeaturesParams.featNames, DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
-
+        # print("dataFinal",dataFinal)
         # GO THROUGH CVs
         minHoursTrain= findMinNumHoursToTrain(dataFinal, GeneralParams.PersCV_MinTrainHours, GeneralParams.PersCV_CVStepInHours) #min hours so that at lease one seizure
         numCV=int(np.ceil((len(dataFinal)-minHoursTrain*GeneralParams.PersCV_CVStepInHours*60*60)/ (GeneralParams.PersCV_CVStepInHours*60*60)))
-        print("minHoursTrain=",minHoursTrain)
+        # print("minHoursTrain=",minHoursTrain,"numCV",numCV)
         #create dataframe with data that is in the train set
         annotationsInTrain=extractTrainFiles( annotationsTrue, minHoursTrain*GeneralParams.PersCV_CVStepInHours, pat )
         annotationsInTrainAllSubj = pd.concat([annotationsInTrainAllSubj, annotationsInTrain], axis=0)

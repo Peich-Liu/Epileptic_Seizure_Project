@@ -51,8 +51,7 @@ def main():
     algorithm = args.algorithm
     configPath = 'conf/'+algorithm + '.yaml'
     config = load_yaml_config(configPath)
-
-
+    # print("algorithm",args.algorithm,"trainType",args.trainType)
     paramUpdate = parametersUpdate({'Unipolar':config['DatasetPreprocessParams']['Unipolar'],
                                     'Bipolar':config['DatasetPreprocessParams']['Bipolar'],
                                     'refElectrode':config['DatasetPreprocessParams']['refElectrode'],

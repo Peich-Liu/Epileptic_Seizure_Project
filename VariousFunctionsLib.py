@@ -742,7 +742,7 @@ def train_StandardML_moreModelsPossible(X_train, y_train,  StandardMLParams):
 
 
 #test program is here
-def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.85):
+def test_StandardML_moreModelsPossible(data,trueLabels,  model, custom_threshold=0.95):
     ''' Gives predictions for using trained model. Returns predictions and probability.
     Aso calculates simple overall accuracy and accuracy per class. Just for a reference.
 

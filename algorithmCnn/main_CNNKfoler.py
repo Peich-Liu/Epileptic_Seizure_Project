@@ -45,7 +45,7 @@ def trainCNNKfolder():
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsCNN.eegDataNormalization==''):
         # outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '30_12_new_TrainingResults' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '01_01fulldata_new_TrainingResults' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
             winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']'+'/'
     else:
         # outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNN.eegDataNormalization+'/'
@@ -111,7 +111,6 @@ def trainCNNKfolder():
     # ##########################
     ###TRAINING
     print('TRAINING') # run leave-one-subject-out CV
-    NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
     AllRes_test=np.zeros((len(GeneralParamsCNN.patients),27))
 
     patient_indices = {patient: idx for idx, patient in enumerate(GeneralParamsCNN.patients)}
@@ -356,13 +355,10 @@ def trainCNNKfolder():
         y_true = data['TrueLabels'].values
         y_scores = data['ProbabLabels'].values
 
-        # 计算 ROC 曲线
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
-        # 计算 AUC
         auc = roc_auc_score(y_true, y_scores)
 
-        # 绘制 ROC 曲线
         plt.figure()
         plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % auc)
         plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
@@ -373,7 +369,6 @@ def trainCNNKfolder():
         plt.title('Receiver Operating Characteristic')
         plt.legend(loc="lower right")
         outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
-        # 保存图像到文件
-        plt.savefig(outName_ROC)  # 指定保存路径
-        
-trainCNNKfolder()
+        plt.savefig(outName_ROC)
+#debug        
+# trainCNNKfolder()

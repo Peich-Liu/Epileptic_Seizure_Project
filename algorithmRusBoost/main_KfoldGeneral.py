@@ -286,4 +286,4 @@ def trainRusKfolder():
     # ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER
     # # load all predictions in time
     # TestDifferentPostprocessingParams(outPredictionsFolder, dataset, GeneralParams, StandardMLParams)
-trainRusKfolder()
+# trainRusKfolder()
