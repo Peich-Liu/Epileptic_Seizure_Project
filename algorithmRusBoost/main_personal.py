@@ -54,7 +54,7 @@ def trainRusPersonal():
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParams.eegDataNormalization==''):
         outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults'+'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '0301_multi_TrainingResults'+'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
             FeaturesParams.featNames) + appendix+ '/'
     else:

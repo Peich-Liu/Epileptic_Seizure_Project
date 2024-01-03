@@ -205,6 +205,7 @@ def recalculatePerfPerSubject(performancePerFileName, subjects, labelFreq, param
             scoresSample.fp = np.sum(dataThisSubj.Sample_numFP.to_numpy())
             scoresSample.computeScores()
         else: #usually this means that for that subj there was no ssizures in test
+            print("subjects",subjects)
             (scoresEvent, scoresSample)= setScoresToNan(scoresEvent, scoresSample)
 
         results['subject'].append(pat)
