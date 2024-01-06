@@ -2,9 +2,9 @@ import sys
 import os
 sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
-from algorithmCnn.parametersSetupCNN import *
-from algorithmCnn.architecture import *
-from algorithmCnn.trainer import *
+from algorithmLight.parametersSetupCNNLight import *
+from algorithmLight.architecture import *
+from algorithmLight.trainer import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 
@@ -402,3 +402,4 @@ def trainCnnLightGeneral():
         outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
         # 保存图像到文件
         plt.savefig(outName_ROC)  # 指定保存路径
+# trainCnnLightGeneral()

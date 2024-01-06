@@ -2,9 +2,9 @@ import sys
 import os
 sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
-from algorithmCnn.parametersSetupCNN import *
-from algorithmCnn.architecture import *
-from algorithmCnn.trainer import *
+from algorithmLight.parametersSetupCNNLight import *
+from algorithmLight.architecture import *
+from algorithmLight.trainer import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 

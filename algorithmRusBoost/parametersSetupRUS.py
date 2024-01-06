@@ -18,7 +18,7 @@ class GeneralParams:
 ##############################################################################################
 #### PREPROCESSING PARAMETERS
 class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
-    dataset = 'SIENA'
+    dataset = 'CHBMIT'
     samplFreq = 256  # sampling frequency of data
     #Channels structure
     #Unipolar channels

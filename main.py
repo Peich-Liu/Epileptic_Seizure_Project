@@ -5,7 +5,7 @@ from parametersUpdate import parametersUpdate
 import yaml
 from algorithmRusBoost import main_KfoldGeneral, main_general, main_personal
 from algorithmCnn import main_CNNKfoler
-from algorithmLight import main_CnnLightKfolder, main_CnnLight_general
+from algorithmLight import main_CnnLightKfolder, main_CnnLight_general,main_CnnLight_personal
 
 def load_yaml_config(file_path):
     with open(file_path, 'r') as file:
@@ -36,10 +36,8 @@ def get_training_function(train_type, algorithm):
         return main_CnnLightKfolder.trainCnnLightKfolder
     elif train_type == "general" and algorithm == "CNNLight":
         return main_CnnLight_general.trainCnnLightGeneral
-    # elif train_type == "personal" and algorithm == "Transformer":
-    #     return 
-    # elif train_type == "general" and algorithm == "Transformer":
-    #     return 
+    elif train_type == "personal" and algorithm == "CNNLight":
+        return main_CnnLight_personal.trainCnnLightPersonal
 
     else:
         raise ValueError("Unknown training type")
