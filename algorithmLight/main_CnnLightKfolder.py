@@ -57,18 +57,18 @@ def trainCnnLightKfolder():
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
     # # #####################################################
-    # # # # STANDARTIZE DATASET - Only has to be done once
-    # # print('STANDARDIZING DATASET')
-    # # # .edf as output
-    # # if (dataset=='CHBMIT'):
-    # #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    # #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # # else:
-    # #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    # # STANDARTIZE DATASET - Only has to be done once
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    # # # if we want to change output format
-    # # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    # if we want to change output format
+    standardizeDataset(rootDir, outDir, outFormat='csv')
+    standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # # # #####################################################
     # # # EXTRACT ANNOTATIONS - Only has to be done once
@@ -146,7 +146,7 @@ def trainCnnLightKfolder():
             # print("trainFolders=",trainFolders)
             label_df = annotationsTrue
             #temp modify
-            # trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStep, DatasetPreprocessParamsCNNLight.eegDataNormalization)
+            trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStep, DatasetPreprocessParamsCNNLight.eegDataNormalization)
             testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStepTest, DatasetPreprocessParamsCNNLight.eegDataNormalization)
             
             test_data_pred = []
@@ -166,13 +166,13 @@ def trainCnnLightKfolder():
             # # # test_data_df = read_csv(info_path)
             # # print("test_data_df=",test_data_df)
             # # test_data_df = None
-            # train_size = int(0.9 * len(trainSet))  
-            # val_size = len(trainSet) - train_size
+            train_size = int(0.9 * len(trainSet))  
+            val_size = len(trainSet) - train_size
             
-            # trainDataset, valDataset = random_split(trainSet, [train_size, val_size])
+            trainDataset, valDataset = random_split(trainSet, [train_size, val_size])
 
-            # train_loader = DataLoader(trainDataset, batch_size=batch_size, shuffle=False)
-            # val_loader = DataLoader(valDataset, batch_size=batch_size, shuffle=False)
+            train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=False)
+            val_loader = DataLoader(valDataset, batch_size=batch_size, shuffle=False)
             
             test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False,collate_fn=custom_collate_fn)
             # for batch_idx, (data, target) in enumerate(test_loader):
@@ -192,36 +192,38 @@ def trainCnnLightKfolder():
             # # print("Using device:", device)
             # # print("train_loader",train_loader)
             # # print("testSet",testSet)
-            # all_data = []
-            # all_labels = []
+            all_data = []
+            all_labels = []
             # # model = Net(n_channel,n_classes).to(device)
-            # model = Net(n_channel,n_classes)
+            model = Net(n_channel,n_classes)
             
-            # for data, labels in train_loader:
-            #     # data = data.to(device)
-            #     # labels = labels.to(device)
-            #     all_data.append(data)
-            #     all_labels.append(labels)
-            #     # print("data",data,";labels=",labels)
-            # X_train = torch.cat(all_data)
-            # y_train = torch.cat(all_labels)
-            # # X_train.to(device)
-            # # y_train.to(device)
-            # print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
-            # val_data = []
-            # val_labels = []
-            # # test_labels_for_visual = []
-            # for data, labels in val_loader:
-            #     # data = data.to(device)
-            #     # labels = labels.to(device)
-            #     val_data.append(data)
-            #     val_labels.append(labels)
-            #     # print("data",data,";labels=",labels)
-            # X_val = torch.cat(val_data)
-            # y_val = torch.cat(val_labels)
-            # # X_train.to(device)
-            # # y_train.to(device)
-            # print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
+            for data, labels in train_loader:
+                # data = data.to(device)
+                # labels = labels.to(device)
+                all_data.append(data)
+                all_labels.append(labels)
+                print("data",data,";labels=",labels)
+                
+            print("alldata",all_data)
+            X_train = torch.cat(all_data)
+            y_train = torch.cat(all_labels)
+            # X_train.to(device)
+            # y_train.to(device)
+            print("X_train.shape=",X_train.shape,"y_train.shape=",y_train.shape)
+            val_data = []
+            val_labels = []
+            # test_labels_for_visual = []
+            for data, labels in val_loader:
+                # data = data.to(device)
+                # labels = labels.to(device)
+                val_data.append(data)
+                val_labels.append(labels)
+                # print("data",data,";labels=",labels)
+            X_val = torch.cat(val_data)
+            y_val = torch.cat(val_labels)
+            # X_train.to(device)
+            # y_train.to(device)
+            print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
 
             test_data = []
             test_labels = []
@@ -244,29 +246,29 @@ def trainCnnLightKfolder():
             # print("X_val.shape=",X_val.shape,"y_val.shape=",y_val.shape)
             # ########################################## 
             # # #TRAINING
-            # Train_set_chb=(X_train,y_train)
-            # val_dataset_chb=(X_val,y_val)
-            # print("Train_set_chb=",Train_set_chb[0].shape)
+            Train_set_chb=(X_train,y_train)
+            val_dataset_chb=(X_val,y_val)
+            print("Train_set_chb=",Train_set_chb[0].shape)
 
-            # Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
-            # learning_rate = 0.001
-            # Trainer_chb.compile(learning_rate=learning_rate)
-            # epochs = 60
-            # print(test_patient)
-            # Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_2812_{}.pt'.format(test_patient))
-            # filename = f'training_output_subject_{test_patient}.csv'
-            # with open(filename, 'w', newline='') as file:
-            #     writer = csv.writer(file)
-            #     writer.writerow(["Epoch Number", "Train Loss", "Val Loss"])
+            Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
+            learning_rate = 0.001
+            Trainer_chb.compile(learning_rate=learning_rate)
+            epochs = 60
+            print(test_patient)
+            Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='CNN_light_{}.pt'.format(test_patient))
+            filename = f'training_output_subject_{test_patient}.csv'
+            with open(filename, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(["Epoch Number", "Train Loss", "Val Loss"])
 
-            #     for epoch, (train_loss, val_loss) in enumerate(zip(Tracker['train_tracker'], Tracker['val_tracker'])):
-            #         writer.writerow([epoch, train_loss, val_loss])
+                for epoch, (train_loss, val_loss) in enumerate(zip(Tracker['train_tracker'], Tracker['val_tracker'])):
+                    writer.writerow([epoch, train_loss, val_loss])
 
-            # print(f"Training data saved to {filename}")
-            # print(Tracker)        
+            print(f"Training data saved to {filename}")
+            print(Tracker)        
             # ########################################## 
             # #EVALUATE
-            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_siena_class1_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='CNN_light_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
             # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
             # print()
             # measure performance

@@ -147,6 +147,7 @@ class EEGDataset(Dataset):
         self.window_indices = []
         print("edfFiles",self.edfFiles)
         for file_idx, file_path in enumerate(self.edfFiles):
+            absolute_file_path = os.path.abspath(file_path)
             self.current_file_index = file_idx
             self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
             self.current_file_length = self.current_data.shape[0]
@@ -157,8 +158,8 @@ class EEGDataset(Dataset):
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
                 end = start + self.window_size
-                if file_path in self.file_to_seizure:
-                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
+                if absolute_file_path in self.file_to_seizure:
+                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[absolute_file_path]
                     if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
                         label = 1
                     else:

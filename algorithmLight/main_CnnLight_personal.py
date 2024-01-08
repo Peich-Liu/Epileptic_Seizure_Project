@@ -56,18 +56,18 @@ def trainCnnLightPersonal():
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
     # # #####################################################
-    # # # # STANDARTIZE DATASET - Only has to be done once
-    # # print('STANDARDIZING DATASET')
-    # # # .edf as output
-    # # if (dataset=='CHBMIT'):
-    # #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    # #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # # else:
-    # #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    # # STANDARTIZE DATASET - Only has to be done once
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    # # # if we want to change output format
-    # # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    # if we want to change output format
+    standardizeDataset(rootDir, outDir, outFormat='csv')
+    standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # # # #####################################################
     # # # EXTRACT ANNOTATIONS - Only has to be done once

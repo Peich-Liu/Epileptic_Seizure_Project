@@ -57,19 +57,19 @@ def trainCnnLightGeneral():
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
 
-    # # #####################################################
-    # # # # STANDARTIZE DATASET - Only has to be done once
-    # # print('STANDARDIZING DATASET')
-    # # # .edf as output
-    # # if (dataset=='CHBMIT'):
-    # #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    # #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # # else:
-    # #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    #####################################################
+    # # STANDARTIZE DATASET - Only has to be done once
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    # # # if we want to change output format
-    # # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    # if we want to change output format
+    standardizeDataset(rootDir, outDir, outFormat='csv')
+    standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # # # #####################################################
     # # # EXTRACT ANNOTATIONS - Only has to be done once
@@ -379,13 +379,10 @@ def trainCnnLightGeneral():
         y_true = data['TrueLabels'].values
         y_scores = data['ProbabLabels'].values
 
-        # 计算 ROC 曲线
         fpr, tpr, thresholds = roc_curve(y_true, y_scores)
 
-        # 计算 AUC
         auc = roc_auc_score(y_true, y_scores)
 
-        # 绘制 ROC 曲线
         plt.figure()
         plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % auc)
         plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
@@ -396,6 +393,5 @@ def trainCnnLightGeneral():
         plt.title('Receiver Operating Characteristic')
         plt.legend(loc="lower right")
         outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
-        # 保存图像到文件
-        plt.savefig(outName_ROC)  # 指定保存路径
+        plt.savefig(outName_ROC)  
 # trainCnnLightGeneral()

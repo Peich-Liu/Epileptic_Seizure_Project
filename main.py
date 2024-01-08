@@ -30,6 +30,8 @@ def get_training_function(train_type, algorithm):
         return main_TFpersonal.trainTransPersonal
     elif train_type == "general" and algorithm == "Transformer":
         return main_TF_general.trainTransG
+    elif train_type == "Kfolder" and algorithm == "Transformer":
+        raise ValueError("Don't has this validation method") 
     elif train_type == "Kfolder" and algorithm == "CNNLight":
         return main_CnnLightKfolder.trainCnnLightKfolder
     elif train_type == "general" and algorithm == "CNNLight":

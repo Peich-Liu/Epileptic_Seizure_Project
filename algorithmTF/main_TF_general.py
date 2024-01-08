@@ -39,17 +39,17 @@ def trainTransG():
     # # # CREATE FOLDER NAMES
     # appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
-    model_store = '/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
+    model_store = 'DataStore/algorithmTF/model_store/'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsTF.eegDataNormalization==''):
-        outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'TrainingResults' +'_Transformer_general' +'_'+'/01_Transformer' + '_WinStep[' + str(
+        outDirFeatures = 'DataStore/' + dataset + '_Features/'
+        outPredictionsFolder = 'DataStore/' + dataset + 'TrainingResults' +'_Transformer_general' +'_'+'/01_Transformer' + '_WinStep[' + str(
             winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']'+ '/'
     else:
-        outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'new_TrainingResults_' + DatasetPreprocessParamsTF.eegDataNormalization +'_'+ '/01_General_TF' + '_WinStep[' + str(
+        outDirFeatures= 'DataStore/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
+        outPredictionsFolder = 'DataStore/' + dataset + 'new_TrainingResults_' + DatasetPreprocessParamsTF.eegDataNormalization +'_'+ '/01_General_TF' + '_WinStep[' + str(
             winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']_' + '-'.join(
             winParamsTF.featNames) + '/'
     os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
@@ -60,7 +60,7 @@ def trainTransG():
     # # print(os.listdir('../../../../../'))
 
     # # #####################################################
-    # # STANDARTIZE DATASET - Only has to be done once
+    # STANDARTIZE DATASET - Only has to be done once
     print('STANDARDIZING DATASET')
     # .edf as output
     if (dataset=='CHBMIT'):
@@ -190,7 +190,7 @@ def trainTransG():
         metrics = []
         tensorboard_writer = SummaryWriter(folder_path) 
         all_epoch_metrics = []
-        for epoch in range(50):
+        for epoch in range(200):
             epoch_metrics = runner.train_epoch(epoch_num=epoch,outputDir=folder_path)
             print(f"Epoch {epoch} metrics: {epoch_metrics}")
             all_epoch_metrics.append(epoch_metrics)
@@ -199,13 +199,13 @@ def trainTransG():
         csv_file_path = os.path.join(folder_path, 'all_epoch_metrics.csv')
         df.to_csv(csv_file_path, index=False)
         print(epoch_metrics['loss'])
-        TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_CHBMIT_model/model_epoch_349.pth'))
+        TF_model.load_state_dict(torch.load(folder_path+'/model_epoch_199.pth'))
         # TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_PN00/model_epoch_8.pth'),map_location=torch.device('cpu'))
         test_evaluator = AnomalyRunner(TF_model, test_loader, device, loss_module, feat_dim, 
-                                        output_dir='/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF')
+                                        output_dir=outDir+'/algorithmTF')
         
         aggr_metrics_val,predLabels_test, probabLab_test = validate(test_evaluator, tensorboard_writer, None,
-                                                            epoch=349)
+                                                            epoch=200)
         
         print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test")
         # print()
@@ -264,17 +264,18 @@ def trainTransG():
         PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
         annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
 
-        
+        break
     ############################################################
     #EVALUATE PERFORMANCE  - Compare two annotation files
 
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/good_SIENA_performancenew0.8_Transformer_TrainingResults'
     for patIndx, pat in enumerate(GeneralParamsTF.patients):   
-            result_file = outPredictionsFolder + '/Subj' + pat + '_TestPredictions.csv.parquet.gzip'
+            result_file = outPredictionsFolder + 'Subj' + pat + '_Transformer_TestPredictions.csv.parquet.gzip'
             # testData= dataAllSubj[dataAllSubj['Subject'] == pat]
+            ab_result_file = os.path.abspath(result_file)
+            
             testData = test_data_df
-            print("result_file",result_file)
-            predlabels = pd.read_parquet(result_file)
+            print("result_file",ab_result_file)
+            predlabels = pd.read_parquet(ab_result_file)
             testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
 
             annotationsTrue = readDataFromFile(TrueAnnotationsFile)
@@ -285,13 +286,14 @@ def trainTransG():
                 annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
             #save every time, just for backup
             PredictedAnnotationsFileLoad = outPredictionsFolder + '/' + dataset + 'loadAnnotationPredictions.csv'
-
+            # print(PredictedAnnotationsFile)
+            # quit()
             annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFileLoad, index=False)
-            
     print('EVALUATING PERFORMANCE')
     labelFreq=1/winParamsTF.winStep
     TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+    # print()
     # Calcualte performance per file by comparing true annotations file and the one created by ML training
     paramsPerformance = scoring.EventScoring.Parameters(
         toleranceStart=PerformanceParamsTF.toleranceStart,
@@ -299,6 +301,50 @@ def trainTransG():
         minOverlap=PerformanceParamsTF.minOveralp,
         maxEventDuration=PerformanceParamsTF.maxEventDuration,
         minDurationBetweenEvents=PerformanceParamsTF.minDurationBetweenEvents)
+    # performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
+    performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, [], labelFreq, paramsPerformance)
+    # save performance per file
+    PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+    performancePerFile.sort_values(by=['filepath']).to_csv(PerformancePerFileName, index=False)
+
+    # Calculate performance per subject
+    GeneralParamsTF.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+    GeneralParamsTF.patients.sort() #Sorting them
+    PerformancePerFileName = outPredictionsFolder + '/' + dataset + 'PerformancePerFile.csv'
+    performacePerSubj= recalculatePerfPerSubject(PerformancePerFileName, GeneralParamsTF.patients, labelFreq, paramsPerformance)
+    PerformancePerSubjName = outPredictionsFolder + '/' + dataset + 'PerformancePerSubj.csv'
+    performacePerSubj.sort_values(by=['subject']).to_csv(PerformancePerSubjName, index=False)
+    # plot performance per subject
+    plotPerformancePerSubj(GeneralParamsTF.patients, performacePerSubj, outPredictionsFolder)
+
+
+    # ### PLOT IN TIME
+    for patIndx, pat in enumerate(GeneralParamsTF.patients):
+        print(pat)
+        InName = outPredictionsFolder + '/Subj' + pat + '_Transformer' + '_TestPredictions.csv.parquet.gzip'
+        data= readDataFromFile(InName)
+
+        # visualize predictions
+        outName = outPredictionsFolder + '/' + pat + '_PredictionsInTimeLoad'
+        plotPredictionsMatchingInTime(data['TrueLabels'].to_numpy(), data['PredLabels'].to_numpy(), data['PredLabels_MovAvrg'].to_numpy(), data['PredLabels_Bayes'].to_numpy(), outName, PerformanceParamsTF)
+
+
+
+    # ### FIND OPTIMAL PROCESSING PARAMETERS FOR ALL SUBJ TOGETHER
+    # # load all predictions in time
+    # TestDifferentPostprocessingParams(outPredictionsFolder, dataset, GeneralParams, StandardMLParams)
+
+    print('EVALUATING PERFORMANCE')
+    labelFreq=1/winParamsTF.winStep
+    TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
+    PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
+    # Calcualte performance per file by comparing true annotations file and the one created by ML training
+    paramsPerformance = scoring.EventScoring.Parameters(
+    toleranceStart=PerformanceParamsTF.toleranceStart,
+    toleranceEnd=PerformanceParamsTF.toleranceEnd,
+    minOverlap=PerformanceParamsTF.minOveralp,
+    maxEventDuration=PerformanceParamsTF.maxEventDuration,
+    minDurationBetweenEvents=PerformanceParamsTF.minDurationBetweenEvents)
     # performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, labelFreq)
     performancePerFile= evaluate2AnnotationFiles(TrueAnnotationsFile, PredictedAnnotationsFile, [], labelFreq, paramsPerformance)
     # save performance per filex
@@ -318,7 +364,6 @@ def trainTransG():
     print("GeneralParamsTF.patients=",GeneralParamsTF.patients)
     ### PLOT IN TIME
     for patIndx, pat in enumerate(GeneralParamsTF.patients):
-        print(pat)  
         InName = outPredictionsFolder + '/Subj' + pat + '_Transformer_TestPredictions.csv.parquet.gzip'
         data= readDataFromFile(InName)
 
@@ -344,6 +389,5 @@ def trainTransG():
         outName_ROC = outPredictionsFolder + pat + '_PredictionsInTimeROC'
         plt.savefig(outName_ROC)
 
-        
-        
-        
+
+

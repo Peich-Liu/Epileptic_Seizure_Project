@@ -127,12 +127,13 @@ class EEGDataset(Dataset):
         # self.balance_data()
         
         for file_idx, file_path in enumerate(self.edfFiles):
+            absolute_file_path = os.path.abspath(file_path)
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
                 end = start + self.window_size
-                if file_path in self.file_to_seizure:
-                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
+                if absolute_file_path in self.file_to_seizure:
+                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[absolute_file_path]
                     if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
                         label = 1
                     else:

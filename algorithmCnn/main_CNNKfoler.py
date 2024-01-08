@@ -57,18 +57,18 @@ def trainCNNKfolder():
     # # print(os.listdir('../../../../../'))
 
     #####################################################
-    # # # STANDARTIZE DATASET - Only has to be done once
-    # print('STANDARDIZING DATASET')
-    # # .edf as output
-    # if (dataset=='CHBMIT'):
-    #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # else:
-    #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNN.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    # # STANDARTIZE DATASET - Only has to be done once
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNN.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    # # if we want to change output format
-    # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    # if we want to change output format
+    standardizeDataset(rootDir, outDir, outFormat='csv')
+    standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # # # #####################################################
     # # # EXTRACT ANNOTATIONS - Only has to be done once
@@ -103,7 +103,7 @@ def trainCNNKfolder():
     # Create list of all subjects
     GeneralParamsCNN.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParamsCNN.patients.sort() #Sorting them
-    # GeneralParamsCNN.patients=GeneralParamsCNN.patients[:4]
+    # GeneralParamsCNN.patients=GeneralParamsCNN.patients[:5]
     # dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParamsCNN.patients, None,DatasetPreprocessParamsCNN.channelNamesToKeep, TrueAnnotationsFile)
     # print("dataAllSubj=",dataAllSubj)
     # ##########################
@@ -169,8 +169,8 @@ def trainCNNKfolder():
             val_size = len(trainSet) - train_size
             
             trainDataset, valDataset = random_split(trainSet, [train_size, val_size])
-
-            train_loader = DataLoader(trainDataset, batch_size=batch_size, shuffle=False)
+            train_loader = DataLoader(trainSet, batch_size=batch_size, shuffle=False)
+            # train_loader = DataLoader(trainDataset, batch_size=batch_size, shuffle=False)
             val_loader = DataLoader(valDataset, batch_size=batch_size, shuffle=False)
             
             test_loader = DataLoader(testSet, batch_size=batch_size, shuffle=False,collate_fn=custom_collate_fn)
@@ -191,6 +191,7 @@ def trainCNNKfolder():
                 # labels = labels.to(device)
                 all_data.append(data)
                 all_labels.append(labels)
+            # print("trainlabel",all_labels)
                 # print("data",data,";labels=",labels)
             X_train = torch.cat(all_data)
             y_train = torch.cat(all_labels)
@@ -205,6 +206,7 @@ def trainCNNKfolder():
                 # labels = labels.to(device)
                 val_data.append(data)
                 val_labels.append(labels)
+            # print("val_labels",val_labels)
                 # print("data",data,";labels=",labels)
             X_val = torch.cat(val_data)
             y_val = torch.cat(val_labels)
@@ -234,7 +236,9 @@ def trainCNNKfolder():
             # ########################################## 
             # #TRAINING
             Train_set_chb=(X_train,y_train)
-            val_dataset_chb=(X_val,y_val)
+            # val_dataset_chb=(X_val,y_val)
+            val_dataset_chb=(X_test,y_test)
+            
             print("Train_set_chb=",Train_set_chb[0].shape)
 
             Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
@@ -242,7 +246,7 @@ def trainCNNKfolder():
             Trainer_chb.compile(learning_rate=learning_rate)
             epochs = 60
             print(test_patient)
-            Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_3012_{}.pt'.format(test_patient))
+            Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='CNN_{}.pt'.format(test_patient))
             filename = f'training_output_subject_{test_patient}.csv'
             with open(filename, 'w', newline='') as file:
                 writer = csv.writer(file)
@@ -255,7 +259,7 @@ def trainCNNKfolder():
             print(Tracker)        
             # ########################################## 
             # #EVALUATE
-            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_3012_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='CNN_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
             # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
             # print()
             # measure performance
@@ -308,7 +312,7 @@ def trainCNNKfolder():
             #save every time, just for backup
             PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
             annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
-            
+            break
     ############################################################
     #EVALUATE PERFORMANCE  - Compare two annotation files
     print('EVALUATING PERFORMANCE')

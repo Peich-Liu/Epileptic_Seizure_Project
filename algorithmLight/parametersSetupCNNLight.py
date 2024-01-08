@@ -170,33 +170,38 @@ class EEGDataset(Dataset):
         self.edfFiles.sort()
 
         self.seizure_info_df = seizure_info_df
-        print("seizure_info_df",seizure_info_df)
+        # print("seizure_info_df",seizure_info_df)
         self.file_to_seizure = {}
         for _, row in self.seizure_info_df.iterrows():
             relative_path = row['filepath']
             absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
+            # print("standDir",standDir,"absolute_path",absolute_path)
             if os.path.exists(absolute_path):
                 self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
-        print("file_to_seizure",self.file_to_seizure)
+        # print("file_to_seizure",self.file_to_seizure)
         
         self.filepaths = list(self.file_to_seizure.keys())
 
         # unbalanced data modify
         self.window_indices = []
-        print("edfFiles",self.edfFiles)
+        # print("edfFiles",self.edfFiles)
         for file_idx, file_path in enumerate(self.edfFiles):
+            absolute_file_path = os.path.abspath(file_path)
             self.current_file_index = file_idx
             self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
             self.current_file_length = self.current_data.shape[0]
             self.index_within_file = 0
-            # print("file_path",file_path,"current_data",self.current_data,"current_data.shape",self.current_data.shape[0])
+            # print("self.standDir",self.standDir,"file_path",file_path,"current_data",self.current_data,"current_data.shape",self.current_data.shape[0])
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
-            print("num_windows",num_windows)
+            # print("num_windows",num_windows)
+            # print("self.file_to_seizure",self.file_to_seizure)
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
                 end = start + self.window_size
-                if file_path in self.file_to_seizure:
-                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[file_path]
+                # if file_path in self.file_to_seizure:
+                if absolute_file_path in self.file_to_seizure:
+                    seizureStart, seizureEnd, seizureType = self.file_to_seizure[absolute_file_path]
+                    # print("seizureStart",seizureStart,"seizureEnd",seizureEnd,"seizureType",seizureType)
                     if seizureStart*self.sampleFreq < end and seizureEnd*self.sampleFreq > start and 'sz' in seizureType:
                         label = 1
                     else:
@@ -212,7 +217,6 @@ class EEGDataset(Dataset):
         print("trainwindow_indices",len(self.window_indices))
         label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
-
         # if len(label_0_indices) > 100000:
         #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
         sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)

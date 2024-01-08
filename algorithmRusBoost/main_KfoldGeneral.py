@@ -70,8 +70,8 @@ def trainRusKfolder():
         # standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Unipolar, ref='Cz') #for all datasets that are unipolar (SeizIT and Siena)
 
     # if we want to change output format
-    # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    standardizeDataset(rootDir, outDir, outFormat='csv')
+    standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # # #####################################################
     # # EXTRACT ANNOTATIONS - Only has to be done once

@@ -39,17 +39,17 @@ def trainTransPersonal():
     # # # CREATE FOLDER NAMES
     # appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
-    model_store = '/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
+    model_store = 'DataStore/algorithmTF/model_store/'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsTF.eegDataNormalization==''):
-        outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'TrainingResults' +'_Transformer_personal' +'_'+'/01_Transformer' + '_WinStep[' + str(
+        outDirFeatures = 'DataStore/' + dataset + '_Features/'
+        outPredictionsFolder = 'DataStore/' + dataset + 'TrainingResults' +'_Transformer_personal' +'_'+'/01_Transformer' + '_WinStep[' + str(
             winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']'+ '/'
     else:
-        outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'new_TrainingResults_' + DatasetPreprocessParamsTF.eegDataNormalization +'_'+ '/01_General_TF' + '_WinStep[' + str(
+        outDirFeatures= 'DataStore/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
+        outPredictionsFolder = 'DataStore/' + dataset + 'new_TrainingResults_' + DatasetPreprocessParamsTF.eegDataNormalization +'_'+ '/01_General_TF' + '_WinStep[' + str(
             winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']_' + '-'.join(
             winParamsTF.featNames) + '/'
     os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
@@ -59,18 +59,18 @@ def trainTransPersonal():
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
     # # #####################################################
-    # # # # STANDARTIZE DATASET - Only has to be done once
-    # # print('STANDARDIZING DATASET')
-    # # # .edf as output
-    # # if (dataset=='CHBMIT'):
-    # #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    # #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # # else:
-    # #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNN.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    # # STANDARTIZE DATASET - Only has to be done once
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsTF.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsTF.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    # # # if we want to change output format
-    # # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    # if we want to change output format
+    standardizeDataset(rootDir, outDir, outFormat='csv')
+    standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # # # #####################################################
     # # # EXTRACT ANNOTATIONS - Only has to be done once
@@ -185,11 +185,10 @@ def trainTransPersonal():
 
         optimizer = torch.optim.Adam(TF_model.parameters(), lr=1e-3)
         runner = AnomalyRunner(model=TF_model, dataloader=train_loader,device=device,loss_module=loss_module,feat_dim=1024,optimizer=optimizer)
-        # epoch_metrics = UnsupervisedRunner.train_epoch(10)
         metrics = []
         tensorboard_writer = SummaryWriter(folder_path) 
         all_epoch_metrics = []
-        for epoch in range(10):
+        for epoch in range(20):
             epoch_metrics = runner.train_epoch(epoch_num=epoch,outputDir=folder_path)
             print(f"Epoch {epoch} metrics: {epoch_metrics}")
             all_epoch_metrics.append(epoch_metrics)
@@ -198,12 +197,12 @@ def trainTransPersonal():
         csv_file_path = os.path.join(folder_path, 'all_epoch_metrics.csv')
         df.to_csv(csv_file_path, index=False)
         print(epoch_metrics['loss'])
-        TF_model.load_state_dict(torch.load(folder_path+'/model_epoch_9.pth'))
+        TF_model.load_state_dict(torch.load(folder_path+'/model_epoch_19.pth'))
         test_evaluator = AnomalyRunner(TF_model, test_loader, device, loss_module, feat_dim, 
                                         output_dir=outDir+'/algorithmTF')
         
         aggr_metrics_val,predLabels_test, probabLab_test = validate(test_evaluator, tensorboard_writer, None,
-                                                            epoch=200)
+                                                            epoch=20)
         
         print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test")
         # print()
@@ -262,16 +261,17 @@ def trainTransPersonal():
         PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
         annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFile, index=False)
 
-        
     ############################################################
     #EVALUATE PERFORMANCE  - Compare two annotation files
 
     for patIndx, pat in enumerate(GeneralParamsTF.patients):   
-            result_file = outPredictionsFolder + '/Subj' + pat + '_TestPredictions.csv.parquet.gzip'
+            result_file = outPredictionsFolder + 'Subj' + pat + '_Transformer_TestPredictions.csv.parquet.gzip'
             # testData= dataAllSubj[dataAllSubj['Subject'] == pat]
+            ab_result_file = os.path.abspath(result_file)
+            
             testData = test_data_df
-            print("result_file",result_file)
-            predlabels = pd.read_parquet(result_file)
+            print("result_file",ab_result_file)
+            predlabels = pd.read_parquet(ab_result_file)
             testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
 
             annotationsTrue = readDataFromFile(TrueAnnotationsFile)

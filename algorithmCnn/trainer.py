@@ -17,7 +17,12 @@ class trainer:
         self.X_val, self.y_val = Val_set
 
         self.tracker = {'train_tracker':[],'val_tracker':[]}
+        print("y_train",self.y_train,"y_val",self.y_val)
+        contains_one_train = torch.any(self.y_train == 1)
+        contains_one_val = torch.any(self.y_val == 1)
 
+        print("y_train contains 1:", contains_one_train.item())
+        print("y_val contains 1:", contains_one_val.item())
         weights = classweight(class_weight="balanced",classes=np.arange(n_classes),y=self.y_train.numpy())
         if torch.cuda.is_available():
             class_weights = torch.FloatTensor(weights).cuda()

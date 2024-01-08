@@ -7,7 +7,6 @@ from evaluate.evaluate import *
 import os
 
 def trainRusPersonal():
-    torch.cuda.set_device(1) 
     #####################################################
     #Dataset Setting
     dataset = DatasetPreprocessParams.dataset

@@ -39,17 +39,19 @@ DatasetPreprocessParamsTF.channelNamesToKeep=DatasetPreprocessParamsTF.channelNa
 # # # CREATE FOLDER NAMES
 # appendix='_NewNormalization' #if needed
 # Output folder for standardized dataset
-outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
-model_store = '/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/'
+outDir= 'DataStore/'+ dataset+ '_Standardized'
+# model_store = '/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/'
+model_store = 'DataStore/algorithmTF/model_store/'
+
 os.makedirs(os.path.dirname(outDir), exist_ok=True)
 # Output folder with calculated features and  ML model predictions
 if (DatasetPreprocessParamsTF.eegDataNormalization==''):
-    outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults' +'_CNN' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
+    outDirFeatures = 'DataStore/' + dataset + '_Features/'
+    outPredictionsFolder = 'DataStore/' + dataset + '_TrainingResults' +'_CNN' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
         winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']'+ '/'
 else:
-    outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_TrainingResults_' + DatasetPreprocessParamsTF.eegDataNormalization +'_'+ '/01_General_TF' + '_WinStep[' + str(
+    outDirFeatures= 'DataStore/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
+    outPredictionsFolder = 'DataStore/' + dataset + '_TrainingResults_' + DatasetPreprocessParamsTF.eegDataNormalization +'_'+ '/01_General_TF' + '_WinStep[' + str(
         winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']_' + '-'.join(
         winParamsTF.featNames) + '/'
 os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
@@ -196,7 +198,7 @@ for kIndx in range(GeneralParamsTF.GenCV_numFolds):
         #     epoch_metrics = runner.train_epoch(epoch_num=epoch,outputDir=folder_path)
         #     print(f"Epoch {epoch} metrics: {epoch_metrics}")
         # print(epoch_metrics['loss'])
-        TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_PN00_new/model_epoch_8.pth'))
+        TF_model.load_state_dict(torch.load('/DataStore/algorithmTF/model_store/run_PN00_new/model_epoch_8.pth'))
         # TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_PN00/model_epoch_8.pth'),map_location=torch.device('cpu'))
         test_evaluator = AnomalyRunner(TF_model, test_loader, device, loss_module, feat_dim, 
                                         output_dir='/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF')

@@ -465,7 +465,7 @@ class AnomalyRunner(BaseRunner):
         self.epoch_metrics['epoch'] = epoch_num
         self.epoch_metrics['loss'] = epoch_loss
         file_path = os.path.join(outputDir, 'model_epoch_{}.pth'.format(epoch_num))
-        checkpoint_filename = f"checkpoint/{DatasetPreprocessParamsTF.dataset}_checkpoint_epoch_{epoch_num}.pth"
+        checkpoint_filename = f"{DatasetPreprocessParamsTF.dataset}_checkpoint_epoch_{epoch_num}.pth"
         torch.save(self.model.state_dict(), file_path.format(epoch_num))
         torch.save({
             'epoch': epoch_num,
@@ -565,7 +565,7 @@ class AnomalyRunner(BaseRunner):
         df_probs = pd.DataFrame(probs, columns=['probs'])
         df_whole = pd.concat([df_pre, df_probs, df_tar], axis=1)
         print("df_prob.shape", df_probs.shape)
-        df_whole.to_csv('/algorithmTF/model_store/temp1.csv')
+        df_whole.to_csv('temp1.csv')
         false_pos_rate, true_pos_rate, thresholds = sklearn.metrics.roc_curve(targets, probs)  # 1D scores needed
         self.epoch_metrics['AUROC'] = sklearn.metrics.auc(false_pos_rate, true_pos_rate)
         prec, rec, _ = sklearn.metrics.precision_recall_curve(targets, probs)
