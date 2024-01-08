@@ -16,10 +16,10 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 import sklearn
-from parametersSetupTF import DatasetPreprocessParamsTF
-from utils import utils, analysis
-from models.loss import l2_reg_loss
-from datasets.dataset import ImputationDataset, TransductionDataset, ClassiregressionDataset, collate_unsuperv, collate_superv
+from algorithmTF.parametersSetupTF import DatasetPreprocessParamsTF
+from algorithmTF.utils import utils, analysis
+from algorithmTF.models.loss import l2_reg_loss
+from algorithmTF.datasets.dataset import ImputationDataset, TransductionDataset, ClassiregressionDataset, collate_unsuperv, collate_superv
 
 # from rocket.code.rocket_functions import generate_kernels, apply_kernels
 # import xgboost as xgb
@@ -565,7 +565,7 @@ class AnomalyRunner(BaseRunner):
         df_probs = pd.DataFrame(probs, columns=['probs'])
         df_whole = pd.concat([df_pre, df_probs, df_tar], axis=1)
         print("df_prob.shape", df_probs.shape)
-        df_whole.to_csv('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/temp1.csv')
+        df_whole.to_csv('/algorithmTF/model_store/temp1.csv')
         false_pos_rate, true_pos_rate, thresholds = sklearn.metrics.roc_curve(targets, probs)  # 1D scores needed
         self.epoch_metrics['AUROC'] = sklearn.metrics.auc(false_pos_rate, true_pos_rate)
         prec, rec, _ = sklearn.metrics.precision_recall_curve(targets, probs)

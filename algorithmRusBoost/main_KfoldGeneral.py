@@ -37,24 +37,24 @@ def trainRusKfolder():
     # CREATE FOLDER NAMES
     appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParams.eegDataNormalization==''):
-        outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '29debug_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outDirFeatures = outDir + dataset + '_multi_Features/'
+        outPredictionsFolder = outDir + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_Kfolder_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
-            FeaturesParams.featNames) + appendix+ '/'
+            FeaturesParams.featNames) + appendix + '/'
     else:
-        outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_multi_Features'+DatasetPreprocessParams.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_GeneralKfold_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outDirFeatures= outDir + dataset+ '_multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+        outPredictionsFolder = outDir + dataset + '_multi_TrainingResults' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Kfolder_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
-            FeaturesParams.featNames) + appendix+ '/'
+            FeaturesParams.featNames) + appendix + '/'
     os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
     # testing that folders are correct
     # print(os.path.exists(rootDir))
-    # print(os.listdir('../../../../../'))
+    ## print(os.listdir('../../../../../'))
     #####################################################
     # STANDARTIZE DATASET - Only has to be done once
     print('STANDARDIZING DATASET')
@@ -226,7 +226,7 @@ def trainRusKfolder():
     TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'
     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
     #temp
-    # PredictedAnnotationsFile = '/home/pliu/01_General_RUSboost_WinStep[0.391,0.391]_withNetwork_0.95th/SIENAAnnotationPredictions.csv'
+    # PredictedAnnotationsFile = '/01_General_RUSboost_WinStep[0.391,0.391]_withNetwork_0.95th/SIENAAnnotationPredictions.csv'
 
     # Calcualte performance per file by comparing true annotations file and the one created by ML training
     paramsPerformance = scoring.EventScoring.Parameters(

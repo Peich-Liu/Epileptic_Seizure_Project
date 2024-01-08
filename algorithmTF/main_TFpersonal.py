@@ -1,7 +1,7 @@
 import sys
 sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
-from parametersSetupTF import *
+from algorithmTF.parametersSetupTF import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os
@@ -10,12 +10,12 @@ from torch.utils.data import Subset
 from torch import nn
 from sklearn.metrics import precision_score, recall_score
 from sklearn.model_selection import KFold
-from ts_transformer import model_factory, TSTransformerEncoder
-from running import UnsupervisedRunner, AnomalyRunner, validate
-from dataset import *
+from algorithmTF.ts_transformer import model_factory, TSTransformerEncoder
+from algorithmTF.running import UnsupervisedRunner, AnomalyRunner, validate
+from algorithmTF.dataset import *
 from sklearn.metrics import roc_curve, roc_auc_score
 # from parametersSetupTF import PandasTSData
-from loss import MaskedMSELoss, NoFussCrossEntropyLoss
+from algorithmTF.loss import MaskedMSELoss, NoFussCrossEntropyLoss
 from torch.utils.tensorboard import SummaryWriter
 def trainTransPersonal():
     # # # #####################################################
@@ -45,7 +45,7 @@ def trainTransPersonal():
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsTF.eegDataNormalization==''):
         outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'personal_TrainingResults' +'_Transformer' +'_'+'/01_personal_Transformer' + '_WinStep[' + str(
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'TrainingResults' +'_Transformer_personal' +'_'+'/01_Transformer' + '_WinStep[' + str(
             winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']'+ '/'
     else:
         outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
@@ -58,7 +58,6 @@ def trainTransPersonal():
     # # testing that folders are correct
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
-
     # # #####################################################
     # # # # STANDARTIZE DATASET - Only has to be done once
     # # print('STANDARDIZING DATASET')
@@ -200,9 +199,8 @@ def trainTransPersonal():
         df.to_csv(csv_file_path, index=False)
         print(epoch_metrics['loss'])
         TF_model.load_state_dict(torch.load(folder_path+'/model_epoch_9.pth'))
-        # TF_model.load_state_dict(torch.load('/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF/model_store/run_PN00/model_epoch_8.pth'),map_location=torch.device('cpu'))
         test_evaluator = AnomalyRunner(TF_model, test_loader, device, loss_module, feat_dim, 
-                                        output_dir='/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmTF')
+                                        output_dir=outDir+'/algorithmTF')
         
         aggr_metrics_val,predLabels_test, probabLab_test = validate(test_evaluator, tensorboard_writer, None,
                                                             epoch=200)
@@ -268,7 +266,6 @@ def trainTransPersonal():
     ############################################################
     #EVALUATE PERFORMANCE  - Compare two annotation files
 
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/good_SIENA_performancenew0.8_Transformer_TrainingResults'
     for patIndx, pat in enumerate(GeneralParamsTF.patients):   
             result_file = outPredictionsFolder + '/Subj' + pat + '_TestPredictions.csv.parquet.gzip'
             # testData= dataAllSubj[dataAllSubj['Subject'] == pat]

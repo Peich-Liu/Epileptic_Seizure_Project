@@ -37,22 +37,21 @@ def trainRusGeneral():
     # CREATE FOLDER NAMES
     appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParams.eegDataNormalization==''):
-        outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outDirFeatures = outDir + dataset + '_multi_Features/'
+        outPredictionsFolder = outDir + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
             FeaturesParams.featNames) + appendix + '/'
     else:
-        outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outDirFeatures= outDir + dataset+ '_multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+        outPredictionsFolder = outDir + dataset + '_multi_TrainingResults' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_General_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
             FeaturesParams.featNames) + appendix + '/'
     os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
-
     # testing that folders are correct
     # print(os.path.exists(rootDir))
     ## print(os.listdir('../../../../../'))
@@ -199,28 +198,6 @@ def trainRusGeneral():
     #############################################################
     #EVALUATE PERFORMANCE  - Compare two annotation files
     ####################################
-    ###use existing result to evaluate the box figure
-    # result = outPredictionsFolder + '/Subj' + pat + '_'+StandardMLParams.modelType+'_TestPredictions.csv'
-    # temp
-    outPredictionsFolder = '/home/pliu/git_repo/10_datasets/good_SIENA_performancenew0.8_Transformer_TrainingResults/01_Transformer_WinStep[4,1]'
-    for patIndx, pat in enumerate(GeneralParams.patients):   
-        result_file = outPredictionsFolder + '/Subj' + pat + '_'+'Transformer'+'_TestPredictions.csv.parquet.gzip'
-        testData= dataAllSubj[dataAllSubj['Subject'] == pat]
-        print("result_file",result_file)
-        predlabels = pd.read_parquet(result_file)
-        testPredictionsDF=pd.concat([testData[NonFeatureColumns].reset_index(drop=True), pd.DataFrame(predlabels, columns=['ProbabLabels', 'PredLabels', 'PredLabels_MovAvrg', 'PredLabels_Bayes'])] , axis=1)
-
-        annotationsTrue = readDataFromFile(TrueAnnotationsFile)
-        annotationAllPred=createAnnotationFileFromPredictions(testPredictionsDF, annotationsTrue, 'PredLabels_Bayes')
-        if (patIndx==0):
-            annotationAllSubjPred=annotationAllPred
-        else:
-            annotationAllSubjPred = pd.concat([annotationAllSubjPred, annotationAllPred], axis=0)
-        #save every time, just for backup
-        PredictedAnnotationsFileLoad = outPredictionsFolder + '/' + dataset + 'loadAnnotationPredictions.csv'
-        # print(PredictedAnnotationsFile)
-        # quit()
-        annotationAllSubjPred.sort_values(by=['filepath']).to_csv(PredictedAnnotationsFileLoad, index=False)
     print('EVALUATING PERFORMANCE')
     labelFreq=1/FeaturesParams.winStep
     TrueAnnotationsFile = outDir + '/' + dataset + 'AnnotationsTrue.csv'

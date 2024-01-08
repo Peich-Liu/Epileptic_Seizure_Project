@@ -17,8 +17,7 @@ from pandas import *
 import csv
 from sklearn.metrics import roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
-def trainCnnLightGeneral():
-    print("CNNLIGHT GENERAL")
+def trainCnnLightPersonal():
     #####################################################
     #Dataset Setting
     dataset = DatasetPreprocessParamsCNNLight.dataset
@@ -45,7 +44,7 @@ def trainCnnLightGeneral():
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsCNNLight.eegDataNormalization==''):
-        outPredictionsFolder = outDir + dataset + 'TrainingResults' +'_'+'/01_general_Light' + '_WinStep[' + str(
+        outPredictionsFolder = outDir + dataset + 'TrainingResults' +'_'+'/01_Light_personal' + '_WinStep[' + str(
             winParamsCNNLight.winLen) + ',' + str(winParamsCNNLight.winStep) + ']'+'/'
     else:
         outPredictionsFolder = outDir + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNNLight.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
@@ -56,7 +55,6 @@ def trainCnnLightGeneral():
     # # testing that folders are correct
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
-
     # # #####################################################
     # # # # STANDARTIZE DATASET - Only has to be done once
     # # print('STANDARDIZING DATASET')
@@ -124,11 +122,11 @@ def trainCnnLightGeneral():
         n_channel = len(DatasetPreprocessParamsCNNLight.channelNamesToKeep)
         # FOLDER SETUP
         folderDf = annotationsTrue
-        trainPatients = [p for p in GeneralParamsCNN.patients if p != test_patient]
+        trainPatients = [p for p in GeneralParamsCNN.patients if p == test_patient]
         #GENERATE LABEL
         # FOLDER SETUP
         trainFolders = [os.path.join(outDir, p) for p in trainPatients]
-        trainLabels = folderDf[folderDf['subject'] != test_patient ]
+        trainLabels = folderDf[folderDf['subject'] == test_patient ]
         testFolder = [os.path.join(outDir, test_patient)]
         testLabels = annotationsTrue[annotationsTrue['subject'] == test_patient]
         print("testFolder",testFolder)
@@ -161,10 +159,12 @@ def trainCnnLightGeneral():
     #         # print("test_patient=",test_patient)
     #         # print("trainPatients=",trainPatients)
         # FOLDER SETUP
-        trainFolders = [os.path.join(outDir, p) for p in trainPatients]
-        trainLabels = folderDf[folderDf['subject'] != test_patient ]
+        # trainFolders = [os.path.join(outDir, p) for p in trainPatients]
+        # trainLabels = folderDf[folderDf['subject'] != test_patient ]
         testFolder = [os.path.join(outDir, test_patient)]
         testLabels = folderDf[folderDf['subject'] == test_patient ]
+        trainFolders = testFolder
+        trainLabels = testLabels
         # DATA SPILT
         # print("testFolder=",testFolder)
         # print("trainFolders=",trainFolders)
@@ -267,9 +267,9 @@ def trainCnnLightGeneral():
         Trainer_chb = trainer(model, Train_set_chb, val_dataset_chb, 2)
         learning_rate = 0.001
         Trainer_chb.compile(learning_rate=learning_rate)
-        epochs = 60
+        epochs = 20
         print(test_patient)
-        Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='temp_2812_{}.pt'.format(test_patient))
+        Tracker = Trainer_chb.train(epochs=epochs, batch_size=64, patience=10, directory='personal_light_{}.pt'.format(test_patient))
         filename = f'training_output_subject_{test_patient}.csv'
         with open(filename, 'w', newline='') as file:
             writer = csv.writer(file)
@@ -282,7 +282,7 @@ def trainCnnLightGeneral():
         print(Tracker)        
         # ########################################## 
         # #EVALUATE
-        (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_siena_class1_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+        (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='personal_light_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
         # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
         # print()
         # measure performance

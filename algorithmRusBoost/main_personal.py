@@ -34,29 +34,26 @@ def trainRusPersonal():
 
     #####################################################
     # CREATE FOLDER NAMES
-    appendix='_NewNormalization' #if needed _10SUBJ
+    appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    # outDir= '../../../10_datasets/'+ dataset+ '_Standardized'
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParams.eegDataNormalization==''):
-        outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '0301_multi_TrainingResults'+'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outDirFeatures = outDir + dataset + '_multi_Features/'
+        outPredictionsFolder = outDir + dataset + '_multi_TrainingResults' +'_'+StandardMLParams.trainingDataResampling +'_'+ str(StandardMLParams.traininDataResamplingRatio)+'/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
-            FeaturesParams.featNames) + appendix+ '/'
+            FeaturesParams.featNames) + appendix + '/'
     else:
-        outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_multi_TrainingResults_' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
+        outDirFeatures= outDir + dataset+ '_multi_Features_'+DatasetPreprocessParams.eegDataNormalization+'/'
+        outPredictionsFolder = outDir + dataset + '_multi_TrainingResults' + DatasetPreprocessParams.eegDataNormalization +'_'+StandardMLParams.trainingDataResampling+'_'+ str(StandardMLParams.traininDataResamplingRatio)+ '/01_Personal_' + StandardMLParams.modelType + '_WinStep[' + str(
             FeaturesParams.winLen) + ',' + str(FeaturesParams.winStep) + ']_' + '-'.join(
-            FeaturesParams.featNames) + appendix+ '/'
+            FeaturesParams.featNames) + appendix + '/'
     os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
-
     # testing that folders are correct
-    print(os.path.exists(rootDir))
-    # print(os.listdir('../../../../../'))
-
+    # print(os.path.exists(rootDir))
+    ## print(os.listdir('../../../../../'))
     ####################################################
     # # # # STANDARTIZE DATASET - Only has to be done once
     print('STANDARDIZING DATASET')

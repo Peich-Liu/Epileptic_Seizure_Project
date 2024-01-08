@@ -1,7 +1,7 @@
 import sys
 sys.path.append(r'../../Epileptic_Seizure_Project')
 from loadEeg.loadEdf import *
-from parametersSetupTF import *
+from algorithmTF.parametersSetupTF import *
 from VariousFunctionsLib import  *
 from evaluate.evaluate import *
 import os
@@ -10,12 +10,12 @@ from torch.utils.data import Subset
 from torch import nn
 from sklearn.metrics import precision_score, recall_score
 from sklearn.model_selection import KFold
-from ts_transformer import model_factory, TSTransformerEncoder
-from running import UnsupervisedRunner, AnomalyRunner, validate
-from dataset import *
+from algorithmTF.ts_transformer import model_factory, TSTransformerEncoder
+from algorithmTF.running import UnsupervisedRunner, AnomalyRunner, validate
+from algorithmTF.dataset import *
 from sklearn.metrics import roc_curve, roc_auc_score
 # from parametersSetupTF import PandasTSData
-from loss import MaskedMSELoss, NoFussCrossEntropyLoss
+from algorithmTF.loss import MaskedMSELoss, NoFussCrossEntropyLoss
 from torch.utils.tensorboard import SummaryWriter
 def trainTransG():
     # # # #####################################################
@@ -45,7 +45,7 @@ def trainTransG():
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsTF.eegDataNormalization==''):
         outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '0301_TrainingResults' +'_Transformer' +'_'+'/01_Transformer' + '_WinStep[' + str(
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + 'TrainingResults' +'_Transformer_general' +'_'+'/01_Transformer' + '_WinStep[' + str(
             winParamsTF.winLen) + ',' + str(winParamsTF.winStep) + ']'+ '/'
     else:
         outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsTF.eegDataNormalization+'/'
@@ -65,9 +65,9 @@ def trainTransG():
     # .edf as output
     if (dataset=='CHBMIT'):
         # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsTF.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
     else:
-        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNN.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsTF.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
     # if we want to change output format
     # standardizeDataset(rootDir, outDir, outFormat='csv')

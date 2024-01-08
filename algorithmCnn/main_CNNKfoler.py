@@ -40,16 +40,14 @@ def trainCNNKfolder():
     # # # CREATE FOLDER NAMES
     # appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsCNN.eegDataNormalization==''):
-        # outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '01_01fulldata_new_TrainingResults' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
+        outPredictionsFolder = outDir + dataset + '01_01fulldata_new_TrainingResults' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
             winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']'+'/'
     else:
-        # outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNN.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
+        outPredictionsFolder = outDir + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
             winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']_' + '/'
     # os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
@@ -147,7 +145,6 @@ def trainCNNKfolder():
             # print("trainFolders=",trainFolders)
             label_df = annotationsTrue
             #temp modify
-            # outDir = '/home/pliu/testForCNN/CHBCNNtemp'
             trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep, DatasetPreprocessParamsCNN.eegDataNormalization)
             testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStepTest, DatasetPreprocessParamsCNN.eegDataNormalization)
             

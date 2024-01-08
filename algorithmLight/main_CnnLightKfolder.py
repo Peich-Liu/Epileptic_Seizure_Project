@@ -41,16 +41,14 @@ def trainCnnLightKfolder():
     # # # CREATE FOLDER NAMES
     # appendix='_NewNormalization' #if needed
     # Output folder for standardized dataset
-    outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
+    outDir= 'DataStore/'+ dataset+ '_Standardized'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
     if (DatasetPreprocessParamsCNNLight.eegDataNormalization==''):
-        # outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '29_12debug_new_TrainingResults' +'_'+'/01_Kfolder_CNN' + '_WinStep[' + str(
+        outPredictionsFolder = outDir + dataset + 'lightKfolder_new_TrainingResults' +'_'+'/01_Light_Kfolder' + '_WinStep[' + str(
             winParamsCNNLight.winLen) + ',' + str(winParamsCNNLight.winStep) + ']'+'/'
     else:
-        # outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNNLight.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNNLight.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
+        outPredictionsFolder = outDir + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNNLight.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
             winParamsCNNLight.winLen) + ',' + str(winParamsCNNLight.winStep) + ']_' + '/'
     # os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
@@ -58,7 +56,6 @@ def trainCnnLightKfolder():
     # # testing that folders are correct
     # print(os.path.exists(rootDir))
     # # print(os.listdir('../../../../../'))
-
     # # #####################################################
     # # # # STANDARTIZE DATASET - Only has to be done once
     # # print('STANDARDIZING DATASET')
@@ -149,7 +146,6 @@ def trainCnnLightKfolder():
             # print("trainFolders=",trainFolders)
             label_df = annotationsTrue
             #temp modify
-            # outDir = '/home/pliu/testForCNN/CHBCNNtemp'
             # trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStep, DatasetPreprocessParamsCNNLight.eegDataNormalization)
             testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStepTest, DatasetPreprocessParamsCNNLight.eegDataNormalization)
             
@@ -270,8 +266,7 @@ def trainCnnLightKfolder():
             # print(Tracker)        
             # ########################################## 
             # #EVALUATE
-            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='/home/pliu/git_repo/Epileptic_Seizure_Project/temp_siena_class1_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
-            # (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='/home/pliu/git_repo/Epileptic_Seizure_Project/algorithmCnn/temp_3012_PN00.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
+            (predLabels_test, probabLab_test, acc_test, accPerClass_test) = test_DeepLearningModel(test_loader=test_loader,model_path='temp_siena_class1_{}.pt'.format(test_patient),n_channel=n_channel,n_classes=n_classes)
             # print("predLabels_test=",predLabels_test,"probabLab_test",probabLab_test,"acc_test",acc_test,"accPerClass_test", accPerClass_test)
             # print()
             # measure performance
