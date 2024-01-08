@@ -113,45 +113,7 @@ StandardParamsCNN.allFeatNames = None
 ##############################################################################################
 #### DEEP LEARNING PARAMETER
 class EEGDataset(Dataset):
-    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep, Norm):
-        # self.dataNorm = Norm
-        # self.folderIn = folderIn
-        # self.standDir = standDir
-        # self.file_data = {} 
-        # self.sampling_rate = samplFreq
-        # self.window_size = winLen * samplFreq
-        # self.step_size =  winStep * samplFreq 
-
-        # self.edfFiles = []
-
-        # for folder in folderIn:
-        #     print("folder",folder)
-        #     edfFilesInFolder = glob.glob(os.path.join(folder, '**/*.edf'), recursive=True)
-        #     self.edfFiles.extend(edfFilesInFolder)
-        # self.edfFiles.sort()
-
-        # self.seizure_info_df = seizure_info_df
-        # self.file_to_seizure = {}
-        # for _, row in self.seizure_info_df.iterrows():
-        #     relative_path = row['filepath']
-        #     absolute_path = os.path.abspath(os.path.join(standDir, relative_path))
-        #     if os.path.exists(absolute_path):
-        #         self.file_to_seizure[absolute_path] = (row['startTime'], row['endTime'], row['event'])
-        # print("file_to_seizure",self.file_to_seizure)
-        
-        # self.filepaths = list(self.file_to_seizure.keys())
-
-        # # unbalanced data modify
-        # self.window_indices = []
-        # print("edfFiles",self.edfFiles)
-        # for file_idx, file_path in enumerate(self.edfFiles):
-        #     self.current_file_index = file_idx
-        #     self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
-        #     self.current_file_length = self.current_data.shape[0]
-        #     self.index_within_file = 0
-        #     num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
-
-        #     print("file_path",file_path)        
+    def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep, Norm):        
         self.dataNorm = Norm
         self.folderIn = folderIn
         self.standDir = standDir
