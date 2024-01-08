@@ -6,7 +6,7 @@ import yaml
 from algorithmRusBoost import main_KfoldGeneral, main_general, main_personal
 from algorithmCnn import main_CNNKfoler
 from algorithmLight import main_CnnLightKfolder, main_CnnLight_general,main_CnnLight_personal
-
+from algorithmTF import main_TF_general, main_TFpersonal
 def load_yaml_config(file_path):
     with open(file_path, 'r') as file:
         config = yaml.safe_load(file)
@@ -26,12 +26,10 @@ def get_training_function(train_type, algorithm):
         raise ValueError("Data too large, Only for Kfolder")
     elif train_type == "general" and algorithm == "CNN":
         raise ValueError("Data too large, Only for Kfolder") 
-    elif train_type == "Kfolder" and algorithm == "Transformer":
-        return 
     elif train_type == "personal" and algorithm == "Transformer":
-        return 
+        return main_TFpersonal.trainTransPersonal
     elif train_type == "general" and algorithm == "Transformer":
-        return 
+        return main_TF_general.trainTransG
     elif train_type == "Kfolder" and algorithm == "CNNLight":
         return main_CnnLightKfolder.trainCnnLightKfolder
     elif train_type == "general" and algorithm == "CNNLight":

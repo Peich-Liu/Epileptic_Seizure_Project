@@ -22,4 +22,6 @@ class parametersUpdate():
             winParamsCNNLight.updateWinParamsCNN(self.params)
             
         elif algorithmType == 'Transformer':
-            pass
+            DatasetPreprocessParamsCNNLight.updateDatasetPreprocessParams(self.params)
+            winParamsTF.updateWinParamsTF(self.params)
+            

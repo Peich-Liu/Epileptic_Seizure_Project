@@ -38,6 +38,14 @@ class DatasetPreprocessParamsTF: # mostly based on CHB-MIT dataset
     # raw EEG data normalization
     # eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization' 'Z-Score'
     eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization' 'Z-Score'
+    def updateDatasetPreprocessParams(params):
+        DatasetPreprocessParamsTF.channelNamesToKeep_Unipolar = params.get('Unipolar',DatasetPreprocessParamsTF.channelNamesToKeep_Unipolar)
+        DatasetPreprocessParamsTF.channelNamesToKeep_Bipolar = params.get('Bipolar',DatasetPreprocessParamsTF.channelNamesToKeep_Bipolar)
+        DatasetPreprocessParamsTF.refElectrode = params.get('refElectrode',DatasetPreprocessParamsTF.refElectrode)
+        DatasetPreprocessParamsTF.samplFreq = params.get('samplFreq',DatasetPreprocessParamsTF.samplFreq)
+        DatasetPreprocessParamsTF.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParamsTF.eegDataNormalization)
+        DatasetPreprocessParamsTF.dataset = params.get('dataset',DatasetPreprocessParamsTF.dataset)
+        print("uni",DatasetPreprocessParamsTF.channelNamesToKeep_Unipolar)
 
 ##############################################################################################
 #### FEATURES PARAMETERS
@@ -49,6 +57,11 @@ class winParamsTF:
 
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
+    def updateWinParamsTF(params):
+        winParamsTF.winLen = params.get('winLen',winParamsTF.winLen)
+        winParamsTF.winStep = params.get('winStep',winParamsTF.winStep)
+        winParamsTF.featNorm = params.get('featNorm',winParamsTF.featNorm)
+
 
 ##############################################################################################
 #### PERFORMANCE METRICS PARAMETERS
