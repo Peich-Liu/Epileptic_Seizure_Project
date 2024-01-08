@@ -9,16 +9,18 @@ to clone the code to the computer
 
 ### Conda
 
-Create a conda env and install requirements with:
+Create a conda env
+
+install requirements with:
 
 ```bash
-
+python -m pip install -r requirements.txt
 ```
 
 Before each run, activate the environment with:
 
 ```bash
-
+conda activate 'your_conda_name'
 ```
 
 ## Usage
@@ -27,20 +29,12 @@ it is an example of the CHBMIT dataset, RusBoost algorithm, and Leave-one-out va
 ```bash
 python main.py --algorithm RusBoost  --dataset CHBMIT --trainType general
 ```
+Available List:
+--dataset: CHBMIT, SIENA, SeizIT1
+--algorithm: RusBoost, CNN, Transformer, CNNLight
+--trainType: general, personal, Kfolder
 
-### Different Training Example
-: 
-```bash
-
-```
-:
-```bash
-
-```
-
-## Datasets
-
-## Configurations
+notice: not every algorithm has all of the validation methods, you can only use the validation method we mentioned in the report
 
 ### Reference
 
