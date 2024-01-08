@@ -12,7 +12,6 @@ import os
 from VariousFunctionsLib import  *
 from datetime import timedelta, datetime
 import random
-from dldataset.datasetsdl import EEGDataForDL
 
 class GeneralParamsCNN:
     patients=[]  #on which subjects to train and test
