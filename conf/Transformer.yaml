@@ -1,7 +1,7 @@
 algorithm: CNN
 
 dataset: CHBMIT #CHBMIT, SeizIT1, SIENA could be selected
-trainType: Kfolder #This algorithm only has Kfolder train
+trainType: general #This algorithm only has Kfolder train
 
 
 GeneralParams:
