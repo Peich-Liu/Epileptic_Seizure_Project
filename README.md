@@ -1,4 +1,4 @@
-# Epileptic_Seizure_Project (Under construction)
+# Epileptic_Seizure_Project
 ## Installation
 
 use 
@@ -10,6 +10,9 @@ to clone the code to the computer
 ### Conda
 
 Create a conda env
+```bash
+conda create --name 'your_conda_name' python=3.11
+```
 
 install requirements with:
 
