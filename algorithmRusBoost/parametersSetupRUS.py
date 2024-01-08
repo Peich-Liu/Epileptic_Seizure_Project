@@ -38,7 +38,7 @@ class DatasetPreprocessParams: # mostly based on CHB-MIT dataset
     def updateDatasetPreprocessParams(params):
         DatasetPreprocessParams.channelNamesToKeep_Unipolar = params.get('Unipolar',DatasetPreprocessParams.channelNamesToKeep_Unipolar)
         DatasetPreprocessParams.channelNamesToKeep_Bipolar = params.get('Bipolar',DatasetPreprocessParams.channelNamesToKeep_Bipolar)
-        DatasetPreprocessParams.refElectrode = params.get('refElectrode',DatasetPreprocessParams.refElectrode)
+        # DatasetPreprocessParams.refElectrode = params.get('refElectrode',DatasetPreprocessParams.refElectrode)
         DatasetPreprocessParams.samplFreq = params.get('samplFreq',DatasetPreprocessParams.samplFreq)
         DatasetPreprocessParams.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParams.eegDataNormalization)
         DatasetPreprocessParams.dataset = params.get('dataset',DatasetPreprocessParams.dataset)

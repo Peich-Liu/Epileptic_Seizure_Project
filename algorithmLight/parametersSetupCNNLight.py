@@ -22,7 +22,7 @@ class GeneralParamsCNN:
 
 ##############################################################################################
 #### PREPROCESSING PARAMETERS
-class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
+class DatasetPreprocessParamsCNNLight: # mostly based on CHB-MIT dataset
     dataset = 'CHBMIT'
     samplFreq = 256  # sampling frequency of data
     #Channels structure
@@ -41,17 +41,17 @@ class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
     # raw EEG data normalization
     eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization'
     def updateDatasetPreprocessParams(params):
-        DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar = params.get('Unipolar',DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar)
-        DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar = params.get('Bipolar',DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar)
-        DatasetPreprocessParamsCNN.samplFreq = params.get('samplFreq',DatasetPreprocessParamsCNN.samplFreq)
-        DatasetPreprocessParamsCNN.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParamsCNN.eegDataNormalization)
-        DatasetPreprocessParamsCNN.dataset = params.get('dataset',DatasetPreprocessParamsCNN.dataset)
-        print("uni",DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar)
+        DatasetPreprocessParamsCNNLight.channelNamesToKeep_Unipolar = params.get('Unipolar',DatasetPreprocessParamsCNNLight.channelNamesToKeep_Unipolar)
+        DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar = params.get('Bipolar',DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar)
+        DatasetPreprocessParamsCNNLight.samplFreq = params.get('samplFreq',DatasetPreprocessParamsCNNLight.samplFreq)
+        DatasetPreprocessParamsCNNLight.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParamsCNNLight.eegDataNormalization)
+        DatasetPreprocessParamsCNNLight.dataset = params.get('dataset',DatasetPreprocessParamsCNNLight.dataset)
+        print("uni",DatasetPreprocessParamsCNNLight.channelNamesToKeep_Unipolar)
 
 ##############################################################################################
 #### FEATURES PARAMETERS
 
-class winParamsCNN:
+class winParamsCNNLight:
     #window size and step in which window is moved
     winLen= 4 #in seconds, window length on which to calculate features
     winStep= 1 #in seconds, step of moving window length
@@ -59,9 +59,9 @@ class winParamsCNN:
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
     def updateWinParamsCNN(params):
-        winParamsCNN.winLen = params.get('winLen',winParamsCNN.winLen)
-        winParamsCNN.winStep = params.get('winStep',winParamsCNN.winStep)
-        winParamsCNN.featNorm = params.get('featNorm',winParamsCNN.featNorm)
+        winParamsCNNLight.winLen = params.get('winLen',winParamsCNNLight.winLen)
+        winParamsCNNLight.winStep = params.get('winStep',winParamsCNNLight.winStep)
+        winParamsCNNLight.featNorm = params.get('featNorm',winParamsCNNLight.featNorm)
 ##############################################################################################
 #### PERFORMANCE METRICS PARAMETERS
 
@@ -79,13 +79,13 @@ class PerformanceParams:
     maxEventDuration=300 #max length of sizure, automatically split events longer than a given duration
     minDurationBetweenEvents= 90 #mergint too close seizures, automatically merge events that are separated by less than the given duration
 
-    predictionFreq=1/winParamsCNN.winStepTest #ultimate frequency of predictions
+    predictionFreq=1/winParamsCNNLight.winStepTest #ultimate frequency of predictions
 
 
 
 #SAVING SETUP once again to update if new info
 with open('../PARAMETERS.pickle', 'wb') as f:
-    pickle.dump([GeneralParamsCNN, DatasetPreprocessParamsCNN, winParamsCNN, PerformanceParams], f)
+    pickle.dump([GeneralParamsCNN, DatasetPreprocessParamsCNNLight, winParamsCNNLight, PerformanceParams], f)
 
 ##############################################################################################
 #### STAND PARAMETERS
@@ -214,25 +214,25 @@ class EEGDataset(Dataset):
         label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
-        # # if len(label_0_indices) > 100000:
-        # #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
-        # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        # self.balanced_window_indices = sampled_label_0_indices+ label_1_indices
-        # # self.balanced_window_indices = label_0_indices + label_1_indices
-        # random.shuffle(self.balanced_window_indices)
-        # print("self.balanced_window_indices=",len(self.balanced_window_indices))
+        # if len(label_0_indices) > 100000:
+        #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
+        sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
+        print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
+        self.balanced_window_indices = sampled_label_0_indices+ label_1_indices
+        # self.balanced_window_indices = label_0_indices + label_1_indices
+        random.shuffle(self.balanced_window_indices)
+        print("self.balanced_window_indices=",len(self.balanced_window_indices))
 
 
     def __len__(self):
         # return len(self.balanced_window_indices)
-        return len(self.window_indices)
+        return len(self.balanced_window_indices)
 
     
     
     def __getitem__(self, idx):
         # print("idx",idx)
-        file_idx, within_file_idx, label = self.window_indices[idx]
+        file_idx, within_file_idx, label = self.balanced_window_indices[idx]
         # print("file_idx",file_idx)
         start = within_file_idx * self.step_size
         end = start + self.window_size

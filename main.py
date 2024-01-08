@@ -58,7 +58,6 @@ def main():
     # print("algorithm",args.algorithm,"trainType",args.trainType)
     paramUpdate = parametersUpdate({'Unipolar':config['DatasetPreprocessParams']['Unipolar'],
                                     'Bipolar':config['DatasetPreprocessParams']['Bipolar'],
-                                    'refElectrode':config['DatasetPreprocessParams']['refElectrode'],
                                     'samplFreq':config['DatasetPreprocessParams']['samplFreq'],
                                     'eegDataNormalization':config['DatasetPreprocessParams']['eegDataNormalization'],
                                     'winLen':config['FeaturesParams']['winLen'],

@@ -18,8 +18,6 @@ FeaturesParams:
 DatasetPreprocessParams:
   samplFreq: 256
   eegDataNormalization: ''
-  refElectrode:
-    - Cz
   Unipolar:
     - Fp1
     - F3
