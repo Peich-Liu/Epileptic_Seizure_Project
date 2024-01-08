@@ -23,9 +23,9 @@ Before each run, activate the environment with:
 
 ## Usage
 ### Training
-
+it is an example of the CHBMIT dataset, RusBoost algorithm, and Leave-one-out validation
 ```bash
-
+python main.py --algorithm RusBoost  --dataset CHBMIT --trainType general
 ```
 
 ### Different Training Example
