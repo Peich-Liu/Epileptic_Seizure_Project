@@ -21,22 +21,22 @@ def trainCnnLightGeneral():
     print("CNNLIGHT GENERAL")
     #####################################################
     #Dataset Setting
-    dataset = DatasetPreprocessParamsCNN.dataset
+    dataset = DatasetPreprocessParamsCNNLight.dataset
     if dataset == 'SIENA':
         ##SIENA DATASET
         rootDir=  '../../../../../scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from putty
         rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/siena-scalp-eeg/1.0.0' #when running from remote desktop
-        DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar
+        DatasetPreprocessParamsCNNLight.channelNamesToKeep=DatasetPreprocessParamsCNNLight.channelNamesToKeep_Unipolar
     elif dataset == 'SeizIT1':
         # SEIZIT DATASET
         rootDir=  '../../../../../databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from putty
         rootDir=  '../../../../../shares/eslfiler1/databases/medical/ku-leuven/SeizeIT1/v1_0' #when running from remote desktop
-        DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar
+        DatasetPreprocessParamsCNNLight.channelNamesToKeep=DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar
     elif dataset == 'CHBMIT':
         # CHBMIT DATASET
         rootDir=  '../../../../../scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from putty
         rootDir=  '../../../../../shares/eslfiler1/scratch/dan/physionet.org/files/chbmit/1.0.0' #when running from remote desktop
-        DatasetPreprocessParamsCNN.channelNamesToKeep=DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar
+        DatasetPreprocessParamsCNNLight.channelNamesToKeep=DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar
     # # # #####################################################
     # # # CREATE FOLDER NAMES
     # appendix='_NewNormalization' #if needed
@@ -44,14 +44,14 @@ def trainCnnLightGeneral():
     outDir= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Standardized'
     os.makedirs(os.path.dirname(outDir), exist_ok=True)
     # Output folder with calculated features and  ML model predictions
-    if (DatasetPreprocessParamsCNN.eegDataNormalization==''):
+    if (DatasetPreprocessParamsCNNLight.eegDataNormalization==''):
         # outDirFeatures = '/home/pliu/git_repo/10_datasets/' + dataset + '_Features/'
         outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '02_01_lightgeneraldebug_new_TrainingResults' +'_'+'/01_general_CNN' + '_WinStep[' + str(
-            winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']'+'/'
+            winParamsCNNLight.winLen) + ',' + str(winParamsCNNLight.winStep) + ']'+'/'
     else:
-        # outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNN.eegDataNormalization+'/'
-        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNN.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
-            winParamsCNN.winLen) + ',' + str(winParamsCNN.winStep) + ']_' + '/'
+        # outDirFeatures= '/home/pliu/git_repo/10_datasets/'+ dataset+ '_Features_'+DatasetPreprocessParamsCNNLight.eegDataNormalization+'/'
+        outPredictionsFolder = '/home/pliu/git_repo/10_datasets/' + dataset + '_new_new_TrainingResults_' + DatasetPreprocessParamsCNNLight.eegDataNormalization +'_'+  '/01_General_CNN' + '_WinStep[' + str(
+            winParamsCNNLight.winLen) + ',' + str(winParamsCNNLight.winStep) + ']_' + '/'
     # os.makedirs(os.path.dirname(outDirFeatures), exist_ok=True)
     os.makedirs(os.path.dirname(outPredictionsFolder), exist_ok=True)
 
@@ -65,9 +65,9 @@ def trainCnnLightGeneral():
     # # # .edf as output
     # # if (dataset=='CHBMIT'):
     # #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    # #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    # #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNNLight.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
     # # else:
-    # #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNN.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    # #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNNLight.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
     # # # if we want to change output format
     # # standardizeDataset(rootDir, outDir, outFormat='csv')
@@ -107,7 +107,7 @@ def trainCnnLightGeneral():
     GeneralParamsCNN.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParamsCNN.patients.sort() #Sorting them
     # GeneralParamsCNN.patients=GeneralParamsCNN.patients[:4]
-    # dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParamsCNN.patients, None,DatasetPreprocessParamsCNN.channelNamesToKeep, TrueAnnotationsFile)
+    # dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParamsCNN.patients, None,DatasetPreprocessParamsCNNLight.channelNamesToKeep, TrueAnnotationsFile)
     # print("dataAllSubj=",dataAllSubj)
     # ##########################
     ###TRAINING
@@ -123,7 +123,7 @@ def trainCnnLightGeneral():
         #PARAMETER SETUP
         n_classes = 2
         batch_size = 16
-        n_channel = len(DatasetPreprocessParamsCNN.channelNamesToKeep)
+        n_channel = len(DatasetPreprocessParamsCNNLight.channelNamesToKeep)
         # FOLDER SETUP
         folderDf = annotationsTrue
         trainPatients = [p for p in GeneralParamsCNN.patients if p != test_patient]
@@ -152,7 +152,7 @@ def trainCnnLightGeneral():
 
     #     n_classes = 2
     #     batch_size = 32
-    #     n_channel = len(DatasetPreprocessParamsCNN.channelNamesToKeep)
+    #     n_channel = len(DatasetPreprocessParamsCNNLight.channelNamesToKeep)
     #     # FOLDER SETUP
     #     folderDf = annotationsTrue[annotationsTrue['subject'].isin(patientsToTest)]
     #     for p, test_patient in enumerate(patientsToTest):
@@ -173,8 +173,8 @@ def trainCnnLightGeneral():
         label_df = annotationsTrue
         #temp modify
         # outDir = '/home/pliu/testForCNN/CHBCNNtemp'
-        trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStep, DatasetPreprocessParamsCNN.eegDataNormalization)
-        testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNN.samplFreq, winParamsCNN.winLen, winParamsCNN.winStepTest, DatasetPreprocessParamsCNN.eegDataNormalization)
+        trainSet = EEGDataset(outDir,trainFolders,trainLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStep, DatasetPreprocessParamsCNNLight.eegDataNormalization)
+        testSet = EEGDatasetTest(outDir,testFolder, testLabels, DatasetPreprocessParamsCNNLight.samplFreq, winParamsCNNLight.winLen, winParamsCNNLight.winStepTest, DatasetPreprocessParamsCNNLight.eegDataNormalization)
         
         test_data_pred = []
         info_path = 'info_' + test_patient + '.csv'
@@ -343,7 +343,7 @@ def trainCnnLightGeneral():
     ############################################################
     #EVALUATE PERFORMANCE  - Compare two annotation files
     print('EVALUATING PERFORMANCE')
-    labelFreq=1/winParamsCNN.winStepTest
+    labelFreq=1/winParamsCNNLight.winStepTest
     TrueAnnotationsFile = outDir + '/' + dataset + 'CNNAnnotationsTrue.csv'
     PredictedAnnotationsFile = outPredictionsFolder + '/' + dataset + 'AnnotationPredictions.csv'
     # Calcualte performance per file by comparing true annotations file and the one created by ML training
