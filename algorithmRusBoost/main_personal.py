@@ -29,19 +29,7 @@ def trainRusPersonal():
     #####################################################
     # SET DIFFERENT PARAMETERS
     # Set features to use (it will be in the ouput folder name)
-    # FeaturesParams.featNames = np.array( ['ZeroCross'])
-    # FeaturesParams.featNames = np.array( ['MeanDeg'])
-    # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength'])
-    # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency'])
-    # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross'])
-    # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','ZeroCross'])
-    # FeaturesParams.featNames = np.array( ['Frequency']) 
-    # FeaturesParams.featNames = np.array( ['ZeroCrossAbs'])
-    # FeaturesParams.featNames = np.array( ['MeanDeg'])
-    # FeaturesParams.featNames = np.array(['StandardDeviation','DMe','SKewnesss','SecondOrder'])
-    # FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD',])
     FeaturesParams.featNames = np.array( ['StandardDeviation','DMe','SKewnesss','SecondOrder','KatzFD','Network'])
-    # FeaturesParams.featNames = np.array( ['MeanAmpl', 'LineLength','Frequency','ZeroCross','StandardDeviation','DMe','SKewnesss','SecondOrder'])
     FeaturesParams.featSetNames= FeaturesParams.featNames
 
     #####################################################
@@ -71,17 +59,17 @@ def trainRusPersonal():
 
     ####################################################
     # # # # STANDARTIZE DATASET - Only has to be done once
-    # print('STANDARDIZING DATASET')
-    # # .edf as output
-    # if (dataset=='CHBMIT'):
-    #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # else:
-    #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    # # # if we want to change output format
-    # # standardizeDataset(rootDir, outDir, outFormat='csv')
-    # # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
+    # # if we want to change output format
+    # standardizeDataset(rootDir, outDir, outFormat='csv')
+    # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
     # #####################################################
     # EXTRACT ANNOTATIONS - Only has to be done once
@@ -109,14 +97,14 @@ def trainRusPersonal():
     annotationsTrue=pd.read_csv(TrueAnnotationsFile)
 
     # # # # #####################################################
-    # # # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-    # calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
-    # # print("JSbegin")
-    # # # # # # CALCULATE KL DIVERGENCE OF FEATURES
-    # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-    # GeneralParams.patients.sort() #Sorting them
-    # FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-    # calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+    # # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+    calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+    # print("JSbegin")
+    # # # # # CALCULATE KL DIVERGENCE OF FEATURES
+    GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+    GeneralParams.patients.sort() #Sorting them
+    FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+    calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
     # # # # # ####################################################
     # # # # # TRAIN PERSONALIZED MODEL

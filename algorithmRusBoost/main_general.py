@@ -59,15 +59,15 @@ def trainRusGeneral():
 
     #####################################################
     # # STANDARTIZE DATASET - Only has to be done once
-    # print('STANDARDIZING DATASET')
-    # # .edf as output
-    # if (dataset=='CHBMIT'):
-    #     # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
-    #     standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
-    # else:
-    #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
+    print('STANDARDIZING DATASET')
+    # .edf as output
+    if (dataset=='CHBMIT'):
+        # standardizeDataset(rootDir, outDir, origMontage='bipolar-dBanana')  # for CHBMIT
+        standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParams.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # for CHBMIT
+    else:
+        standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParams.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
 
-    #if we want to change output format
+    # if we want to change output format
     # standardizeDataset(rootDir, outDir, outFormat='csv')
     # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
 
@@ -98,14 +98,14 @@ def trainRusGeneral():
     annotationsTrue=pd.read_csv(TrueAnnotationsFile)
     print(annotationsTrue)
     # #####################################################
-    # # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
-    # calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
+    # EXTRACT FEATURES AND SAVE TO FILES - Only has to be done once
+    calculateFeaturesForAllFiles(outDir, outDirFeatures, DatasetPreprocessParams, FeaturesParams, DatasetPreprocessParams.eegDataNormalization, outFormat ='parquet.gzip' )
 
-    # # # CALCULATE KL DIVERGENCE OF FEATURES
-    # GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
-    # GeneralParams.patients.sort() #Sorting them
-    # FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
-    # calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
+    # # CALCULATE KL DIVERGENCE OF FEATURES
+    GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
+    GeneralParams.patients.sort() #Sorting them
+    FeaturesParams.allFeatNames = constructAllfeatNames(FeaturesParams)
+    calculateKLDivergenceForFeatures(dataset, GeneralParams.patients , outDirFeatures, TrueAnnotationsFile, FeaturesParams)
 
     # # ####################################################
     # # # TRAIN GENERALIZED MODEL
