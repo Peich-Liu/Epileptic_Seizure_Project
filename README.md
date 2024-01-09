@@ -27,7 +27,7 @@ conda activate 'your_conda_name'
 ```
 
 ## Usage
-### Training
+### Running
 it is an example of the CHBMIT dataset, RusBoost algorithm, and Leave-one-out validation
 ```bash
 python main.py --algorithm RusBoost  --dataset CHBMIT --trainType general
@@ -39,6 +39,6 @@ Available List:
 
 notice: not every algorithm has all of the validation methods, you can only use the validation method we mentioned in the report
 
-### Reference
+
 
 
