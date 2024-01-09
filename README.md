@@ -39,7 +39,7 @@ Available List:
 
 notice: not every algorithm has all of the validation methods, you can only use the validation method we mentioned in the report
 The available validation methods are:
-[!image](https://github.com/Peich-Liu/Epileptic_Seizure_Project/blob/main/available_method.png)
+![image text](https://github.com/Peich-Liu/Epileptic_Seizure_Project/blob/main/available_method.png)
 
 
 
