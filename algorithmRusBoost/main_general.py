@@ -114,7 +114,7 @@ def trainRusGeneral():
     # Create list of all subjects
     GeneralParams.patients = [ f.name for f in os.scandir(outDir) if f.is_dir() ]
     GeneralParams.patients.sort() #Sorting them
-    GeneralParams.patients=GeneralParams.patients[0:2]
+    # GeneralParams.patients=GeneralParams.patients[0:2]
     print("GeneralParams.patients",GeneralParams.patients)
     dataAllSubj= loadAllSubjData(dataset, outDirFeatures, GeneralParams.patients, FeaturesParams.featNames,DatasetPreprocessParams.channelNamesToKeep, TrueAnnotationsFile)
     NonFeatureColumns= ['Subject', 'FileName', 'Time', 'Labels']
