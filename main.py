@@ -4,9 +4,10 @@ import argparse
 from parametersUpdate import parametersUpdate
 import yaml
 from algorithmRusBoost import main_KfoldGeneral, main_general, main_personal
-from algorithmCnn import main_CNNKfoler
-from algorithmLight import main_CnnLightKfolder, main_CnnLight_general,main_CnnLight_personal
+from algorithmCnn import main_CNNKfoler, alCNN_Exp02
+from algorithmLight import main_CnnLight_general,main_CnnLight_personal,main_CnnLightKfolder
 from algorithmTF import main_TF_general, main_TFpersonal
+# from test.Epileptic_Seizure_Project.algorithmLight import main_CnnLightFodder
 def load_yaml_config(file_path):
     with open(file_path, 'r') as file:
         config = yaml.safe_load(file)
@@ -22,6 +23,8 @@ def get_training_function(train_type, algorithm):
         return main_general.trainRusGeneral
     elif train_type == "Kfolder" and algorithm == "CNN":
         return main_CNNKfoler.trainCNNKfolder
+    elif train_type == "EXP02" and algorithm == "CNN":
+        return alCNN_Exp02.trainCNNExp02
     elif train_type == "personal" and algorithm == "CNN":
         raise ValueError("Data too large, Only for Kfolder")
     elif train_type == "general" and algorithm == "CNN":
@@ -51,7 +54,7 @@ def main():
     default_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
     parser.add_argument("--algorithm", type=str,default='RusBoost', choices=['RusBoost', 'CNN','Transformer','CNNLight'], help="algorithm name")
     parser.add_argument("--dataset", type=str,default='SIENA', choices=['SIENA', 'CHBMIT','SeizIT1'], help="dataset name")
-    parser.add_argument("--trainType", type=str,default='Kfolder', choices=['Kfolder', 'general','personal'], help="different algorithm has different requirement, can check in the conf files")
+    parser.add_argument("--trainType", type=str,default='Kfolder', choices=['Kfolder', 'general','personal','EXP02'], help="different algorithm has different requirement, can check in the conf files")
     
     args = parser.parse_args()
     algorithm = args.algorithm

@@ -12,6 +12,7 @@ import os
 from VariousFunctionsLib import  *
 from datetime import timedelta, datetime
 import random
+from scipy.signal import butter, filtfilt
 
 class GeneralParamsCNN:
     patients=[]  #on which subjects to train and test
@@ -31,12 +32,13 @@ class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
     refElectrode ='Cz' #default 'Cz' or 'Avrg', or any of channels listed above
     #Bipolar channels
     # channelNamesToKeep_Bipolar = ('T3-Cz')
-    channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
+    channelNamesToKeep_Bipolar = ('FP1-F7','F7-T7','P7-O1','FP1-F3','F3-C3','C3-P3','P3-O1','FP2-F4','F4-C4','C4-P4','P4-O2','FP2-F8','F8-T8', 'T8-P8','P8-O2','FZ-CZ','CZ-PZ','P7-T7','T7-FT9','FT9-FT10', 'FT10-T8' )
+    
+    # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fz-Cz', 'Cz-Pz', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2')
     # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T7', 'T7-P7', 'P7-O1', 'Fz-Cz', 'Cz-Pz',
     #                    'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T8', 'T8-P8', 'P8-O2') # TODO for old features
     # refElectrode='bipolar-dBanana' #if bipolar then ref electrode is not needed so put 'bipolar-dBanana'
     channelNamesToKeep=channelNamesToKeep_Unipolar
-
     # raw EEG data normalization
     eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization'
     def updateDatasetPreprocessParams(params):
@@ -45,7 +47,7 @@ class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
         DatasetPreprocessParamsCNN.samplFreq = params.get('samplFreq',DatasetPreprocessParamsCNN.samplFreq)
         DatasetPreprocessParamsCNN.eegDataNormalization = params.get('eegDataNormalization',DatasetPreprocessParamsCNN.eegDataNormalization)
         DatasetPreprocessParamsCNN.dataset = params.get('dataset',DatasetPreprocessParamsCNN.dataset)
-        print("uni",DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar)
+        # print("uni",DatasetPreprocessParamsCNN.channelNamesToKeep_Unipolar)
 
 ##############################################################################################
 #### FEATURES PARAMETERS
@@ -54,7 +56,7 @@ class winParamsCNN:
     #window size and step in which window is moved
     winLen= 4 #in seconds, window length on which to calculate features
     winStep= 1 #in seconds, step of moving window length
-    winStepTest = winLen
+    # winStepTest = winLen
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
     def updateWinParamsCNN(params):
@@ -78,7 +80,9 @@ class PerformanceParams:
     maxEventDuration=300 #max length of sizure, automatically split events longer than a given duration
     minDurationBetweenEvents= 90 #mergint too close seizures, automatically merge events that are separated by less than the given duration
 
-    predictionFreq=1/winParamsCNN.winStepTest #ultimate frequency of predictions
+    # predictionFreq=1/winParamsCNN.winStepTest #ultimate frequency of predictions
+    predictionFreq=1/winParamsCNN.winStep #ultimate frequency of predictions
+    
 
 
 
@@ -109,7 +113,6 @@ class StandardParamsCNN:
 
 #compile list of all features
 StandardParamsCNN.allFeatNames = None
-
 ##############################################################################################
 #### DEEP LEARNING PARAMETER
 class EEGDataset(Dataset):
@@ -122,7 +125,6 @@ class EEGDataset(Dataset):
         self.window_size = winLen * samplFreq
         self.step_size =  winStep * samplFreq
         self.file_cache = {}
-
         self.edfFiles = []
 
         for folder in folderIn:
@@ -154,7 +156,7 @@ class EEGDataset(Dataset):
             self.index_within_file = 0
             # print("file_path",file_path,"current_data",self.current_data,"current_data.shape",self.current_data.shape[0])
             num_windows = (self.current_file_length - self.window_size) // self.step_size + 1
-            print("num_windows",num_windows)
+            print("num_windows",num_windows)#comment here
             for within_file_idx in range(num_windows):
                 start = within_file_idx * self.step_size
                 end = start + self.window_size
@@ -172,19 +174,7 @@ class EEGDataset(Dataset):
                     print("skip")
                     continue
                 self.window_indices.append((file_idx, within_file_idx, label))
-        print("trainwindow_indices",len(self.window_indices))
-        label_0_indices = [idx for idx in self.window_indices if idx[2] == 0]
-        label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
-
-        # # if len(label_0_indices) > 100000:
-        # #     sampled_label_0_indices = random.sample(label_0_indices, 100000)
-        # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
-        # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
-        # self.balanced_window_indices = sampled_label_0_indices+ label_1_indices
-        # # self.balanced_window_indices = label_0_indices + label_1_indices
-        # random.shuffle(self.balanced_window_indices)
-        # print("self.balanced_window_indices=",len(self.balanced_window_indices))
-
+        # print("trainwindow_indices",len(self.window_indices))
 
     def __len__(self):
         # return len(self.balanced_window_indices)
@@ -193,13 +183,13 @@ class EEGDataset(Dataset):
     
     
     def __getitem__(self, idx):
-        # print("idx",idx)
+        
         file_idx, within_file_idx, label = self.window_indices[idx]
-        # print("file_idx",file_idx)
+
+        
         start = within_file_idx * self.step_size
         end = start + self.window_size
         filepath = self.edfFiles[file_idx]
-        # print("getitem",filepath)
         current_data, sampleFreq, _ = self.load_file(file_idx)
         rel_filepath = os.path.relpath(filepath, start=self.standDir)
         seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
@@ -209,14 +199,19 @@ class EEGDataset(Dataset):
             file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d %H:%M:%S')
         except:
             file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d')
-            
         window_start_datetime = file_start_datetime + timedelta(seconds=window_start_time_seconds)
-        # print("window_start_datetime",window_start_datetime)
+
 
         window = current_data[start:end].to_numpy()
-        # print("window",window.shape)
-        window_tensor = torch.tensor(window, dtype=torch.float)
+        sos = signal.butter(5, 64, btype='low', analog=False, output='sos', fs=256)
+        filtered = signal.sosfilt(sos, window)
+        window_tensor = torch.tensor(filtered, dtype=torch.float)
         window_tensor = window_tensor.transpose(0, 1)
+        # print("window",window.shape)
+        # print("idx",idx)
+        # print("file_idx",file_idx)
+        # print("getitem",filepath)
+        # print("window_start_datetime",window_start_datetime)
         # print("additional_info",additional_info)
         # print("start",start)
         return window_tensor, torch.tensor(label, dtype=torch.long)
@@ -240,54 +235,6 @@ class EEGDataset(Dataset):
         # eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
     def clear_cache(self):
         self.file_cache.clear()    
-    # def __getitem__(self, idx):
-    #     file_idx, within_file_idx, label = self.balanced_window_indices[idx]
-    #     start = within_file_idx * self.step_size
-    #     end = start + self.window_size
-
-    #     window = self.current_data[start:end].to_numpy()
-    #     window_tensor = torch.tensor(window, dtype=torch.float)
-    #     window_tensor = window_tensor.transpose(0, 1)
-
-    #     return window_tensor, torch.tensor(label, dtype=torch.long)      
-    
-    
-    # def load_file(self, file_index):
-    #     filepath = self.edfFiles[file_index]
-    #     eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
-    #     if (self.dataNorm=='NormWithPercentile'):
-    #         eegDataDF= normalizeWithPercentile(eegDataDF, 0.99)
-    #         # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
-    #     elif (self.dataNorm=='QuantileNormalization'):
-    #         eegDataDF= QuantileNormalization(eegDataDF)
-    #         # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
-    #     elif(self.dataNorm=='Z-Score'):
-    #         eegDataDF= z_score_normalize(eegDataDF)
-    #     return eegDataDF, samplFreq, fileStartTime
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class EEGDatasetTest(Dataset):
     def __init__(self, standDir, folderIn, seizure_info_df, samplFreq, winLen, winStep,Norm):
@@ -299,8 +246,6 @@ class EEGDatasetTest(Dataset):
         self.window_size = winLen * samplFreq
         self.step_size =  winStep * samplFreq
         self.file_cache = {}
-
-
         self.edfFiles = []
 
         for folder in folderIn:
@@ -323,8 +268,9 @@ class EEGDatasetTest(Dataset):
 
         # unbalanced data modify
         self.window_indices = []
-        print("edfFiles",self.edfFiles)
+        # print("edfFiles",self.edfFiles)
         for file_idx, file_path in enumerate(self.edfFiles):
+            file_path = os.path.abspath(file_path)
             self.current_file_index = file_idx
             self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
             self.current_file_length = self.current_data.shape[0]
@@ -350,8 +296,8 @@ class EEGDatasetTest(Dataset):
                     continue
                 self.window_indices.append((file_idx, within_file_idx, label))
                 # print("file_idx",file_idx,"within_file_idx",within_file_idx,"label",label)
-        print("self.window_indices",len(self.window_indices))
-        print("window1",self.window_indices[1])
+        # print("self.window_indices",len(self.window_indices))
+        # print("window1",self.window_indices[1])
 
 
     def __len__(self):
@@ -360,16 +306,12 @@ class EEGDatasetTest(Dataset):
 
     
     def __getitem__(self, idx):
-        # print("idx",idx)
         file_idx, within_file_idx, label = self.window_indices[idx]
-        # print("file_idx",file_idx)
         start = within_file_idx * self.step_size
         end = start + self.window_size
         filepath = self.edfFiles[file_idx]
-        # print("getitem",filepath)
         current_data, sampleFreq, _ = self.load_file(file_idx)
         rel_filepath = os.path.relpath(filepath, start=self.standDir)
-        # print("rel_filepath",rel_filepath)
         seizure_record = self.seizure_info_df[self.seizure_info_df['filepath'] == rel_filepath]
         
         window_start_time_seconds = within_file_idx * self.step_size / self.sampling_rate
@@ -379,8 +321,6 @@ class EEGDatasetTest(Dataset):
             file_start_datetime = datetime.strptime(seizure_record['dateTime'].iloc[0], '%Y-%m-%d')
             
         window_start_datetime = file_start_datetime + timedelta(seconds=window_start_time_seconds)
-        # print("window_start_datetime",window_start_datetime)
-        
         additional_info = {
         'subject': seizure_record['subject'].iloc[0] if not seizure_record.empty else None,
         'session': seizure_record['session'].iloc[0] if not seizure_record.empty else None,
@@ -396,9 +336,16 @@ class EEGDatasetTest(Dataset):
     }
 
         window = current_data[start:end].to_numpy()
-        # print("window",window.shape)
-        window_tensor = torch.tensor(window, dtype=torch.float)
+        sos = signal.butter(5, 64, btype='low', analog=False, output='sos', fs=256)
+        filtered = signal.sosfilt(sos, window)
+        window_tensor = torch.tensor(filtered, dtype=torch.float)
         window_tensor = window_tensor.transpose(0, 1)
+        # print("idx",idx)
+        # print("file_idx",file_idx)
+        # print("getitem",filepath)
+        # print("rel_filepath",rel_filepath)
+        # print("window_start_datetime",window_start_datetime)
+        # print("window",window.shape)
         # print("additional_info",additional_info)
         # print("start",start)
         return window_tensor, torch.tensor(label, dtype=torch.long), additional_info
@@ -418,16 +365,8 @@ class EEGDatasetTest(Dataset):
         return self.file_cache[filepath]
         # print("filepath",filepath)
         # eegDataDF, samplFreq, fileStartTime = readEdfFile(filepath)
-    def clear_cache(self):
-        self.file_cache.clear()
-        
-        
-        # if (self.dataNorm=='NormWithPercentile'):
-        #     eegDataDF= normalizeWithPercentile(eegDataDF, 0.99)
-        #     # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
-        # elif (self.dataNorm=='QuantileNormalization'):
-        #     eegDataDF= QuantileNormalization(eegDataDF)
-        #     # plotDensityPlotOfData(eegDataDF, folderOut + '/EEGDensity_'+dataNorm+'.png')
-        # elif(self.dataNorm=='Z-Score'):
-        #     eegDataDF= z_score_normalize(eegDataDF)
-        # return eegDataDF, samplFreq, fileStartTime
+    # def clear_cache(self):
+    #     self.file_cache.clear()
+
+
+# class cnnExp01(Dataset):

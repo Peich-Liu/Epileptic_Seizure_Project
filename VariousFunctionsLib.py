@@ -1411,8 +1411,8 @@ def test_DeepLearningModel(test_loader, model_path, n_channel, n_classes, thresh
             outputs = model(data)
             probabilities = torch.softmax(outputs, dim=1)
             
-            # predicted_classes = (probabilities[:, 1] > probabilities[:,0]).long()
-            predicted_classes = (probabilities[:, 1] > threshold).long()
+            predicted_classes = (probabilities[:, 1] > probabilities[:,0]).long()
+            # predicted_classes = (probabilities[:, 1] > threshold).long()
             # print("probabilities=",probabilities[:,0],probabilities[:,1])
             # if probabilities[0]<probabilities[1]:
             #     print("1111")
