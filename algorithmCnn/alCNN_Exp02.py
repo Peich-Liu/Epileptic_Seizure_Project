@@ -64,8 +64,8 @@ def trainCNNExp02():
     # else:
     #     standardizeDataset(rootDir, outDir, ref=DatasetPreprocessParamsCNN.refElectrode) #for all datasets that are unipolar (SeizIT and Siena)
     # if we want to change output format
-    # standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana' )  # .edf as output
-    # standardizeDataset(rootDir, outDir, outFormat='csv')
+    # standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana')  # .edf as output
+    # standardizeDataset(rootDir, outDir, electrodes= DatasetPreprocessParamsCNN.channelNamesToKeep_Bipolar,  inputMontage=Montage.BIPOLAR,ref='bipolar-dBanana', outFormat='csv')
     # standardizeDataset(rootDir, outDir, outFormat='parquet.gzip')
     # # # #####################################################
     # # # EXTRACT ANNOTATIONS - Only has to be done once

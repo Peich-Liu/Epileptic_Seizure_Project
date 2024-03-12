@@ -51,8 +51,8 @@ class DatasetPreprocessParamsTF: # mostly based on CHB-MIT dataset
 
 class winParamsTF:
     #window size and step in which window is moved
-    winLen= 4 #in seconds, window length on which to calculate features
-    winStep= 1 #in seconds, step of moving window length
+    winLen= 6 #in seconds, window length on which to calculate features
+    winStep= 6 #in seconds, step of moving window length
 
     #normalization of feature values or not
     featNorm = 'Norm' #'', 'Norm&Discr', 'Norm'
@@ -150,8 +150,8 @@ class EEGDataset(Dataset):
         label_1_indices = [idx for idx in self.window_indices if idx[2] == 1]
 
         self.balanced_window_indices = label_0_indices
-        if len(self.balanced_window_indices) > 30000:
-            self.balanced_window_indices = random.sample(self.balanced_window_indices, 30000)
+        # if len(self.balanced_window_indices) > 30000:
+        #     self.balanced_window_indices = random.sample(self.balanced_window_indices, 30000)
 
         # sampled_label_0_indices = random.sample(label_0_indices, len(label_1_indices)*3)
         # print("label_0_indices=",len(sampled_label_0_indices),"label_1_indices=",len(label_1_indices))
@@ -167,6 +167,8 @@ class EEGDataset(Dataset):
         start = within_file_idx * self.step_size
         end = start + self.window_size
         window = self.current_data[start:end].to_numpy()
+        sos = signal.butter(4, [0.5, 50], btype='bandpass', output='sos', fs=256)
+        filtered = signal.sosfilt(sos, window)
         window_tensor = torch.tensor(window, dtype=torch.float)
 
         masking_ratio = 0.15  
@@ -240,8 +242,8 @@ class EEGDataForDL(Dataset):
 class EEGDatasetTest(EEGDataForDL):
     def __init__(self):
         self.balanced_window_indices = self.label_0_indices
-        if len(self.balanced_window_indices) > 30000:
-            self.balanced_window_indices = random.sample(self.balanced_window_indices, 30000)
+        # if len(self.balanced_window_indices) > 30000:
+        #     self.balanced_window_indices = random.sample(self.balanced_window_indices, 30000)
 
     def __len__(self):
         return len(self.test_window_indices)
@@ -251,6 +253,8 @@ class EEGDatasetTest(EEGDataForDL):
         start = within_file_idx * self.step_size
         end = start + self.window_size
         window = self.current_data[start:end].to_numpy()
+        sos = signal.butter(4, [0.5, 50], btype='bandpass', output='sos', fs=256)
+        filtered = signal.sosfilt(sos, window)
         window_tensor = torch.tensor(window, dtype=torch.float)
 
         masking_ratio = 0.15  
@@ -434,6 +438,7 @@ class EEGDatasetTestTF(Dataset):
 
         # print("self.edfFiles",self.edfFiles)
         for file_idx, file_path in enumerate(self.edfFiles):
+            file_path = os.path.abspath(file_path)
             self.current_file_index = file_idx
             self.current_data, self.sampleFreq, self.fileStartTime = self.load_file(self.current_file_index)
             self.current_file_length = self.current_data.shape[0]

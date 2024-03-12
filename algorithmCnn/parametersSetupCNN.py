@@ -38,7 +38,7 @@ class DatasetPreprocessParamsCNN: # mostly based on CHB-MIT dataset
     # channelNamesToKeep_Bipolar = ('Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp1-F7', 'F7-T7', 'T7-P7', 'P7-O1', 'Fz-Cz', 'Cz-Pz',
     #                    'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2', 'Fp2-F8', 'F8-T8', 'T8-P8', 'P8-O2') # TODO for old features
     # refElectrode='bipolar-dBanana' #if bipolar then ref electrode is not needed so put 'bipolar-dBanana'
-    channelNamesToKeep=channelNamesToKeep_Unipolar
+    channelNamesToKeep=channelNamesToKeep_Bipolar
     # raw EEG data normalization
     eegDataNormalization='' # '' for none, 'NormWithPercentile', or 'QuantileNormalization'
     def updateDatasetPreprocessParams(params):
